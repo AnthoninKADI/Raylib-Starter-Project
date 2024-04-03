@@ -14,7 +14,7 @@ const int padding = 2;
 
 
 Color normalColor = WHITE;
-Color difficultColor = RED;
+Color difficultColor = BROWN;
 Color challengingColor = ORANGE;
 Color obstacleColor = DARKGRAY;
 Color pathColor = SKYBLUE;
@@ -162,37 +162,34 @@ void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vec
             const Node& node = grid[i][j];
             if (std::find(path.begin(), path.end(), &node) != path.end())
             {
-                //std::cout << " o ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
             }
             else if (node.obstacle || node.terrain == Obstacle)
             {
-                //std::cout << " X ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, obstacleColor);
             }
             else if (node.terrain == Normal)
             {
-                //std::cout << " . ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, normalColor);
             }
             else if (node.terrain == Challenging)
             {
-                //std::cout << " C ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, challengingColor);
             }
             else if (node.terrain == Difficult)
             {
-                //std::cout << " D ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, difficultColor);
             }
             else
             {
-                //std::cout << "E ";
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, emptyColor);
             }
         }
     }
 }
+
+bool startSelected = false;
+bool endSelected = false;
 
 int main()
 {
@@ -222,7 +219,7 @@ int main()
     }
 
     Node* start = grid[0].data();
-    const Node* goal = &grid[rows - 1][cols - 1];
+    Node* goal = &grid[rows - 1][cols - 1];
 
     grid[1][6].obstacle = true;
     grid[1][7].obstacle = true;
@@ -264,27 +261,70 @@ int main()
         BeginDrawing();
         ClearBackground(emptyColor);
 
-        const std::vector<Node*> path = aStar(start, goal, grid);
+        if (!start) startSelected = false;
+        if (!goal) endSelected = false;
 
-        if (!path.empty())
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+
         {
-            std::cout << "Grid with path :\n";
-            DrawPathWithGrid(grid, path);
+            const Vector2 mousePos = GetMousePosition();
 
-            std::cout << "\nPath found :\n";
-            for (const auto& node : path)
+            const int x = static_cast<int>(mousePos.x) / rectWidth;
+
+            const int y = static_cast<int>(mousePos.y) / rectHeight;
+
+            if (x >= 0 && x < rows && y >= 0 && y < cols)
+
             {
-                std::cout << getTerrainCost(*node) << " -> ";
-                std::cout << "(" << node->x << ", " << node->y << ") | ";
+
+                if (!startSelected)
+
+                {
+                    start = &grid[x][y];
+                    startSelected = true;
+                    printf("start ");
+
+                }
+
+                else if (!endSelected && &grid[x][y] != start)
+
+                {
+                    goal = &grid[x][y];
+                    endSelected = true;
+                    printf(" end \n");
+
+                }
+
             }
-            std::cout << '\n';
-
         }
-        else
+
+        // Print Grid with no path to at least have something show up 
+
+        DrawPathWithGrid(grid, {});
+
+
+
+        // make sure a valid Start, End node are selected
+
+        if (startSelected && endSelected && !start->obstacle && !goal->obstacle)
+
         {
-            DrawPathWithGrid(grid, path);
-        }
 
+            // Call A* algorithm
+
+            const std::vector<Node*> path = aStar(start, goal, grid);
+
+            // Print the path
+
+            // print the grid with the Full Computed Path (if valid, else returns an empty path)
+
+            DrawPathWithGrid(grid, path);
+
+            if (start != nullptr) DrawRectangle(start->x * rectWidth, start->y * rectHeight, rectWidth - 1, rectHeight - 1, GREEN);
+
+            if (goal != nullptr) DrawRectangle(goal->x * rectWidth, goal->y * rectHeight, rectWidth - 1, rectHeight - 1, RED);
+
+        }
         EndDrawing();
     }
 
