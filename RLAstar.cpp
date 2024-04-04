@@ -159,7 +159,7 @@ void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vec
     {
         for (int j = 0; j < cols; ++j)
         {
-            const Node& node = grid[i][j];
+            const Node& node = grid[j][i];
             if (std::find(path.begin(), path.end(), &node) != path.end())
             {
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
@@ -297,27 +297,13 @@ int main()
 
             }
         }
-
-        // Print Grid with no path to at least have something show up 
-
         DrawPathWithGrid(grid, {});
-
-
-
-        // make sure a valid Start, End node are selected
 
         if (startSelected && endSelected && !start->obstacle && !goal->obstacle)
 
         {
-
-            // Call A* algorithm
-
             const std::vector<Node*> path = aStar(start, goal, grid);
-
-            // Print the path
-
-            // print the grid with the Full Computed Path (if valid, else returns an empty path)
-
+            // Print 
             DrawPathWithGrid(grid, path);
 
             if (start != nullptr) DrawRectangle(start->x * rectWidth, start->y * rectHeight, rectWidth - 1, rectHeight - 1, GREEN);
