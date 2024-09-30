@@ -13,12 +13,15 @@ public:
     int centerY = 1;
     int _radius = 1;
     
-    int velocity;
+    int velocityX = 2;
+    int velocityY = 2;
+    
     float minimumDistance;
     float maxPerceiveDistance;
     float cohesionRadius;
     float maxSteer;
     void DrawBoid();
+    void Update();
 
 private:
     // Vector2 Separate(Boid[] others);

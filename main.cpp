@@ -21,6 +21,7 @@ int main()
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(BLUE);
+        c.Update();
         a.DrawObstacle();
         b.DrawObstacle();
         c.DrawBoid();

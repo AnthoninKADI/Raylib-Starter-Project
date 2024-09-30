@@ -10,9 +10,17 @@ Boid::Boid(int x, int y, int radius)
 Boid::~Boid()
 {
     
-};
+}
 
 void Boid::DrawBoid()
 {
     DrawCircle(centerX, centerY, _radius, WHITE);
 }
+
+void Boid::Update()
+{
+    centerX += velocityX;
+    centerY += velocityY;
+}
+
+
