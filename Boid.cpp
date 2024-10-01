@@ -30,6 +30,9 @@ public:
 
 private:
     Vector2 AvoidObstacles(Obstacles obstacles[], int numObstacles);
+    Vector2 Separate (Boid boid[]);
+    Vector2 Align(Boid boid[]);
+    Vector2 Group(Boid boid[]);
     float RandomAngle(); // Méthode pour générer un angle aléatoire
     Vector2 GetNewDirection(float currentAngle); // Méthode pour obtenir une nouvelle direction
 };
@@ -116,80 +119,9 @@ void Boid::Update(Obstacles obstacles[], int numObstacles) {
 
             // Ajustez la direction pour éviter d'aller dans la même direction
             velocity = GetNewDirection(atan2(velocity.y, velocity.x) + PI); // Nouvelle direction
-        }
-    }
 
-    void Boid::Parameters(const std::vector<Boid>& flock, const std::vector<Obstacles>& obstacles, 
-                    float minDistance, float alignmentFactor, float cohesionFactor, 
-                    const Vector2& boundsMin, const Vector2& boundsMax);
-    {
-        Vector2 separation = {0, 0};
-        Vector2 alignment = {0, 0};
-        Vector2 cohesion = {0, 0};
-        int neighborCount = 0;
-
-        for (const auto& other : flock)
-        {
-            if (&other == this) continue; 
-
-            Vector2 difference = Vector2Subtract(_position, other.position);
-            float distance = Vector2Length(difference);
-
-            if (distance < minimumDistance && distance > 0)
-            {
-                // Separation rule: move away from nearby boids
-                Vector2 normDiff = Vector2Normalize(difference);
-                separation = Vector2Add(separation, Vector2Scale(normDiff, (minimumDistance - distance) * 0.65f)); // Increased separation force
-            }
-
-            if (distance > 0 && distance < minimumDistance * 5)
-            {
-                // Alignment: Adjust velocity to match nearby boids
-                alignment = Vector2Add(alignment, other.velocity);
-
-                // Cohesion: Move towards the center of mass of nearby boids
-                cohesion = Vector2Add(cohesion, other.position);
-                neighborCount++;
-            }
-        }
-
-        if (neighborCount > 0)
-        {
-            // Average the alignment and cohesion influences
-            alignment = Vector2Scale(alignment, 1.0f / neighborCount);
-            alignment = Vector2Scale(Vector2Normalize(alignment), maxPerceiveDistance);
-
-            cohesion = Vector2Scale(cohesion, 1.0f / neighborCount);
-            Vector2 cohesionForce = Vector2Subtract(cohesion, _position);
-            cohesion = Vector2Scale(Vector2Normalize(cohesionForce), cohesionRadius);
-        }
-
-        // Add obstacle avoidance
-        for (const auto& obstacle : obstacles)
-        {
-            // Check if the boid is colliding with the rectangular obstacle
-            Rectangle obstacleRect = {obstacle.position.x, obstacle.position.y, static_cast<float>(obstacle.size_x), static_cast<float>(obstacle.size_y)};
-        
-            // Check for collision between boid (circle) and obstacle (rectangle)
-            if (CheckCollisionCircleRec(_position, minimumDistance / 3.0f, obstacleRect))
-            {
-                // Calculate the vector from the boid to the closest point on the obstacle's boundary
-                Vector2 obstacleCenter = {obstacle.position.x + obstacle.size_x / 2.0f, obstacle.position.y + obstacle.size_y / 2.0f};
-                Vector2 obstacleVec = Vector2Subtract(_position, obstacleCenter);
             
-                // Normalize the vector to create a repulsion force
-                Vector2 normObstacleVec = Vector2Normalize(obstacleVec);
-            
-                // Calculate the repulsion strength based on proximity
-                float repulsionStrength = 10;  // You can scale this value to adjust repulsion strength
-                separation = Vector2Add(separation, Vector2Scale(normObstacleVec, repulsionStrength));
-            }
         }
-
-        // Update velocity based on the three rules and obstacle avoidance
-        velocity = Vector2Add(velocity, separation);
-        velocity = Vector2Add(velocity, alignment);
-        velocity = Vector2Add(velocity, cohesion);
     }
 }
 

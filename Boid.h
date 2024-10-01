@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "raylib.h"
 #include "Obstacles.h"
+#include <raymath.h>
 #include <vector>
 
 class Boid
@@ -20,16 +21,11 @@ public:
     float maxSteer = 1.0f;
     float setMaxSpeed = 5.0f;
 
-    void DrawBoid() const;
-    void Update(Obstacles obstacles[], int numObstacles) const;
-    
-    void Parameter(const std::vector<Boid>& flock,
-                const std::vector<Obstacles>& obstacles, 
-                float minDistance,
-                float alignmentFactor,
-                float cohesionFactor, 
-                const Vector2& boundsMin,
-                const Vector2& boundsMax);
+    void DrawBoid();
+    void Update(Obstacles obstacles[], int numObstacles);
     
     Vector2 AvoidObstacles(Obstacles obstacles[], int numObstacles);
+    Vector2 Separate (Boid[]);
+    Vector2 Align(Boid[]);
+    Vector2 Group(Boid[]);
 };

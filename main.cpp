@@ -32,7 +32,7 @@ int main()
         BeginDrawing();
         ClearBackground(BLUE);
 
-        for (const auto& boid : flock)
+        for (Boid& boid : flock)
         {
             boid.Update(obstacles, numObstacles);
             boid.DrawBoid();
