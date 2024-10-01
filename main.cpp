@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-    InitWindow(500, 500, "Inter AI MAS");
+    InitWindow(800, 800, "Inter AI MAS");
     SetTargetFPS(60);
 
     int Amount = 100;

@@ -13,7 +13,7 @@ public:
     Vector2 _position = Vector2{0, 0};
     int _radius = 1;
     
-    Vector2 velocity = Vector2{1, 1}; // Vitesse sous forme de Vector2
+    Vector2 velocity = Vector2{1, 1}; 
 
     
     float minimumDistance = 25.0f;

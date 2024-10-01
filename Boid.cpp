@@ -9,9 +9,8 @@
 #include "Boid.h"
 
 Boid::Boid(int x, int y, int radius)
-    : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius), 
-      minimumDistance(25.0f), maxPerceiveDistance(0.45f), 
-      cohesionRadius(0.1f), maxSteer(1.0f) {}
+    : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius) 
+      {}
 
 Boid::~Boid() = default;
 
@@ -20,14 +19,14 @@ void Boid::DrawBoid() {
 }
 
 float Boid::RandomAngle() {
-    return static_cast<float>(rand()) / RAND_MAX * 2 * PI; // Angle entre 0 et 2 * PI
+    return static_cast<float>(rand()) / RAND_MAX * 2 * PI; 
 }
 
 Vector2 Boid::GetNewDirection(float currentAngle) {
     float newAngle;
     do {
-        newAngle = RandomAngle(); // Générer un nouvel angle
-    } while (fabs(newAngle - currentAngle) < PI / 4); // S'assurer que la nouvelle direction n'est pas trop proche de l'ancienne
+        newAngle = RandomAngle(); 
+    } while (fabs(newAngle - currentAngle) < PI / 4); 
 
     return Vector2{cos(newAngle) * maxSteer, sin(newAngle) * maxSteer};
 }
@@ -79,18 +78,20 @@ for (const Boid& other : flock)
     _position.y += velocity.y;
 
     // Vérification des bords de la fenêtre
-    if (_position.x < 0 || _position.x > GetScreenWidth() - _radius) {
+    if (_position.x < (_radius * 10)|| _position.x > GetScreenWidth() - ( 10 * _radius)) {
         // Rebondir contre le bord de l'écran
-        float angle = (velocity.x < 0) ? 0 : PI; // Détermine la direction opposée
-        velocity = GetNewDirection(angle); // Nouvelle direction
-        _position.x = Clamp(_position.x, 0, GetScreenWidth() - _radius); // Assurez-vous qu'il reste dans les limites
+        float direction = (_position.x <  (_radius * 10)) ? 1 : -1; 
+        //velocity = GetNewDirection(angle); 
+        velocity.x += 3.f * direction; 
+        //_position.x = Clamp(_position.x, 0, GetScreenWidth() - _radius); 
     }
 
-    if (_position.y < 0 || _position.y > GetScreenHeight() - _radius) {
+    if (_position.y < (_radius * 10) || _position.y > GetScreenHeight() - (_radius * 10)) {
         // Rebondir contre le bord de l'écran
-        float angle = (velocity.y < 0) ? -PI / 2 : PI / 2; // Détermine la direction opposée
-        velocity = GetNewDirection(angle); // Nouvelle direction
-        _position.y = Clamp(_position.y, 0, GetScreenHeight() - _radius); // Assurez-vous qu'il reste dans les limites
+        //float angle = (velocity.y < 0) ? -PI / 2 : PI / 2; 
+        //velocity = GetNewDirection(angle);
+        velocity.y += 3.f * (_position.y <  (_radius * 10) ? 1 : -1); 
+        //_position.y = Clamp(_position.y, 0, GetScreenHeight() - _radius); 
     }
 
     // Vérification des collisions avec les obstacles
@@ -135,6 +136,7 @@ for (const Boid& other : flock)
       velocity = Vector2Add(velocity, separation);
       velocity = Vector2Add(velocity, alignment);
       velocity = Vector2Add(velocity, cohesion);
+    velocity = Vector2Scale(Vector2Normalize(velocity), 5.0f);
 }
 
 
