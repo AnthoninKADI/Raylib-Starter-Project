@@ -34,7 +34,7 @@ int main()
 
         for (Boid& boid : flock)
         {
-            boid.Update(obstacles, numObstacles);
+            boid.Update(flock, obstacles, numObstacles);
             boid.DrawBoid();
         }
 

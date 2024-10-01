@@ -6,36 +6,7 @@
 #include <cstdlib> // Pour rand() et RAND_MAX
 #include <raymath.h>
 #include <vector>
-
-
-class Boid
-{
-public:
-    Boid(int x, int y, int radius);
-    ~Boid();
-
-    Vector2 _position = Vector2{0, 0};
-    int _radius = 1;
-    
-    Vector2 velocity = Vector2{3, 3}; // Vitesse sous forme de Vector2
-    
-    float minimumDistance;
-    float maxPerceiveDistance;
-    float cohesionRadius;
-    float maxSteer;
-    float setMaxSpeed = 5.0f;
-
-    void DrawBoid();
-    void Update(Obstacles obstacles[], int numObstacles);
-
-private:
-    Vector2 AvoidObstacles(Obstacles obstacles[], int numObstacles);
-    Vector2 Separate (Boid boid[]);
-    Vector2 Align(Boid boid[]);
-    Vector2 Group(Boid boid[]);
-    float RandomAngle(); // Méthode pour générer un angle aléatoire
-    Vector2 GetNewDirection(float currentAngle); // Méthode pour obtenir une nouvelle direction
-};
+#include "Boid.h"
 
 Boid::Boid(int x, int y, int radius)
     : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius), 
@@ -61,7 +32,12 @@ Vector2 Boid::GetNewDirection(float currentAngle) {
     return Vector2{cos(newAngle) * maxSteer, sin(newAngle) * maxSteer};
 }
 
-void Boid::Update(Obstacles obstacles[], int numObstacles) {
+void Boid::Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles) {
+for (const Boid& other : flock)
+{
+    if (&other == this) continue;
+}
+    
     // Mise à jour de la position
     _position.x += velocity.x;
     _position.y += velocity.y;

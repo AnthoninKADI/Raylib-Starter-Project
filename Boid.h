@@ -20,9 +20,11 @@ public:
     float cohesionRadius = 1.0f;
     float maxSteer = 1.0f;
     float setMaxSpeed = 5.0f;
+    float RandomAngle();
+    Vector2 GetNewDirection(float currentAngle);
 
     void DrawBoid();
-    void Update(Obstacles obstacles[], int numObstacles);
+    void Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles);
     
     Vector2 AvoidObstacles(Obstacles obstacles[], int numObstacles);
     Vector2 Separate (Boid[]);
