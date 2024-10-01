@@ -4,10 +4,17 @@
 #include <raymath.h>
 #include <vector>
 
+enum class BoidType
+{
+    Rock,
+    Paper,
+    Scissor
+};
+
 class Boid
 {
 public:
-    Boid(int x, int y, int radius);
+    Boid(int x, int y, int radius, Color colorP, BoidType type);
     ~Boid();
     
     Vector2 _position = Vector2{0, 0};
@@ -22,13 +29,18 @@ public:
     float maxSteer = 1.0f;
     float setMaxSpeed = 5.0f;
     float RandomAngle();
+    Color color;
+    BoidType category, predator;
+    
     Vector2 GetNewDirection(float currentAngle);
 
     void DrawBoid();
-    void Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles);
+    void Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles, float PredParam, float PrayParam);
     
     Vector2 AvoidObstacles(Obstacles obstacles[], int numObstacles);
     Vector2 Separate (Boid[]);
     Vector2 Align(Boid[]);
     Vector2 Group(Boid[]);
 };
+
+

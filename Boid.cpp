@@ -8,14 +8,26 @@
 #include <vector>
 #include "Boid.h"
 
-Boid::Boid(int x, int y, int radius)
-    : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius) 
-      {}
+Boid::Boid(int x, int y, int radius, Color colorP, BoidType typeP)
+    : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius), color(colorP) , category(typeP)
+      {
+          switch (typeP)
+          {
+          case BoidType::Scissor:
+              predator = BoidType::Rock;
+              break;
+          case BoidType::Rock:
+              predator = BoidType::Paper;
+              break;
+          default:
+              predator = BoidType::Scissor;
+          }
+      }
 
 Boid::~Boid() = default;
 
 void Boid::DrawBoid() {
-    DrawCircleV(_position, _radius, WHITE);
+    DrawCircleV(_position, _radius, color);
 }
 
 float Boid::RandomAngle() {
@@ -31,11 +43,13 @@ Vector2 Boid::GetNewDirection(float currentAngle) {
     return Vector2{cos(newAngle) * maxSteer, sin(newAngle) * maxSteer};
 }
 
-void Boid::Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles)
+void Boid::Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles,float PredParam, float PreyParam)
 {
 Vector2 separation = {0, 0};
 Vector2 alignment = {0, 0};
 Vector2 cohesion = {0, 0};
+Vector2 PredParameter = {0, 0};
+Vector2 PreyParameter = {0, 0};
 int neighborCount = 0;
     
 for (const Boid& other : flock)
@@ -52,31 +66,48 @@ for (const Boid& other : flock)
         separation = Vector2Add(separation, Vector2Scale(normDiff, (minimumDistance - distance) * 0.1));
     }
 
-    // if (distance > 0 && distance < minimumDistance * 5)
-    // {
-    //     // Allignment
-    //     alignment = Vector2Add(alignment, other.velocity);
-    //
-    //     // Cohesion
-    //     cohesion = Vector2Add(cohesion, other._position);
-    //     neighborCount++;
-    // }
-
-    float mouseX = float(GetMouseX());
-    float mouseY = float(GetMouseY());
-    Vector2 MousePos = Vector2{mouseX, mouseY};
-
-
-    // Parameter for mouse follow
     if (distance > 0 && distance < minimumDistance * 5)
     {
         // Allignment
-        alignment = Vector2Add(alignment, MousePos);
+        alignment = Vector2Add(alignment, other.velocity);
 
         // Cohesion
-        cohesion = Vector2Add(cohesion, MousePos);
+        cohesion = Vector2Add(cohesion, other._position);
         neighborCount++;
     }
+    // Predator avoidance logic : if this boid has a predator nearby, avoid it
+    if (other.category == predator && distance < minimumDistance * 3)
+    {
+        Vector2 predatorDiff = Vector2Normalize(difference);
+        PredParameter = Vector2Add(PredParameter, Vector2Scale(predatorDiff, PredParam));
+    }
+
+    // Prey attraction logic : chase prey
+    if (other.category != predator && other.category != category && distance < minimumDistance * 3)
+    {
+        Vector2 preyDiff = Vector2Normalize(Vector2Subtract(other._position, _position));
+        PreyParameter = Vector2Add(PreyParameter, Vector2Scale(preyDiff, PreyParam));
+    }
+    
+    // Mouse Follow
+    
+    // float mouseX = float(GetMouseX());
+    // float mouseY = float(GetMouseY());
+    // Vector2 MousePos = Vector2{mouseX, mouseY};
+
+    // if (distance > 0 && distance < minimumDistance * 5)
+    // {
+    //     // Allignment
+    //     alignment = Vector2Add(alignment, MousePos);
+    //
+    //     // Cohesion
+    //     cohesion = Vector2Add(cohesion, MousePos);
+    //     neighborCount++;
+    // }
+
+    // cohesion = Vector2Scale(cohesion, 1.0f / float(neighborCount));
+    // const Vector2 cohesionForce = Vector2Subtract(cohesion, _position);
+    // cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 3.f);
 }
 
     if (neighborCount > 0)
@@ -86,7 +117,7 @@ for (const Boid& other : flock)
 
         cohesion = Vector2Scale(cohesion, 1.0f / float(neighborCount));
         const Vector2 cohesionForce = Vector2Subtract(cohesion, _position);
-        cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 3.f);
+        cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 0.1f);
     }
     
     // Mise à jour de la position
@@ -152,7 +183,8 @@ for (const Boid& other : flock)
       velocity = Vector2Add(velocity, separation);
       velocity = Vector2Add(velocity, alignment);
       velocity = Vector2Add(velocity, cohesion);
+      velocity = Vector2Add(velocity, PredParameter);
+      velocity = Vector2Add(velocity, PreyParameter);
     velocity = Vector2Scale(Vector2Normalize(velocity), 5.0f);
 }
-
 

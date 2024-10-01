@@ -10,7 +10,7 @@ int main()
     InitWindow(800, 800, "Inter AI MAS");
     SetTargetFPS(60);
 
-    int Amount = 1000;
+    int Amount = 50;
     std::vector<Boid> flock;
 
     for (int i = 0; i < Amount; ++i)
@@ -18,8 +18,12 @@ int main()
         float x = 1 + i;
         float y = 100;
 
-        flock.emplace_back(x, y, 5);
+        flock.emplace_back(x, y, 10, WHITE, BoidType::Rock);
+        flock.emplace_back(x + 250, y + 50, 10, RED, BoidType::Scissor);
+        flock.emplace_back(x + 50, y + 300, 10, PURPLE, BoidType::Paper);
     }
+
+    
     
     Obstacles obstacle1 = Obstacles(45, 110, Vector2{75, 150});
     Obstacles obstacle2 = Obstacles(75, 100, Vector2{250, 260});
@@ -34,7 +38,7 @@ int main()
 
         for (Boid& boid : flock)
         {
-            boid.Update(flock, obstacles, numObstacles);
+            boid.Update(flock, obstacles, numObstacles, 0.5f, 0.5f);
             boid.DrawBoid();
         }
 
