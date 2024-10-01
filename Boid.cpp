@@ -10,8 +10,8 @@
 
 Boid::Boid(int x, int y, int radius)
     : _position{static_cast<float>(x), static_cast<float>(y)}, _radius(radius), 
-      minimumDistance(20.0f), maxPerceiveDistance(100.0f), 
-      cohesionRadius(50.0f), maxSteer(5.0f) {}
+      minimumDistance(25.0f), maxPerceiveDistance(0.45f), 
+      cohesionRadius(0.1f), maxSteer(1.0f) {}
 
 Boid::~Boid() = default;
 
@@ -32,11 +32,47 @@ Vector2 Boid::GetNewDirection(float currentAngle) {
     return Vector2{cos(newAngle) * maxSteer, sin(newAngle) * maxSteer};
 }
 
-void Boid::Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles) {
+void Boid::Update(std::vector<Boid>& flock, Obstacles obstacles[], int numObstacles)
+{
+Vector2 separation = {0, 0};
+Vector2 alignment = {0, 0};
+Vector2 cohesion = {0, 0};
+int neighborCount = 0;
+    
 for (const Boid& other : flock)
 {
     if (&other == this) continue;
+
+    const Vector2 difference = Vector2Subtract(_position, other._position);
+    const float distance = Vector2Length(difference);
+
+    if (distance < minimumDistance && distance > 0)
+    {
+        // Separation
+        const Vector2 normDiff = Vector2Normalize(difference);
+        separation = Vector2Add(separation, Vector2Scale(normDiff, (minimumDistance - distance) * 0.1));
+    }
+
+    if (distance > 0 && distance < minimumDistance * 5)
+    {
+        // Allignment
+        alignment = Vector2Add(alignment, other.velocity);
+
+        // Cohesion
+        cohesion = Vector2Add(cohesion, other._position);
+        neighborCount++;
+    }
 }
+
+    if (neighborCount > 0)
+    {
+        alignment = Vector2Scale(alignment, 1.0f / float(neighborCount));
+        alignment = Vector2Scale(Vector2Normalize(alignment), 1.0f);
+
+        cohesion = Vector2Scale(cohesion, 1.0f / float(neighborCount));
+        const Vector2 cohesionForce = Vector2Subtract(cohesion, _position);
+        cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 0.1f);
+    }
     
     // Mise à jour de la position
     _position.x += velocity.x;
@@ -84,10 +120,6 @@ for (const Boid& other : flock)
                 collisionNormal.y / length
             };
 
-            // Inverser la direction du boid
-            velocity.x += collisionNormal.x * maxSteer;
-            velocity.y += collisionNormal.y * maxSteer;
-
             // Assurez-vous que le boid ne pénètre pas dans l'obstacle
             // Déplacez le boid à l'extérieur de l'obstacle
             float overlapX = (_position.x + _radius) - obstacles[i]._position.x;
@@ -95,10 +127,14 @@ for (const Boid& other : flock)
 
             // Ajustez la direction pour éviter d'aller dans la même direction
             velocity = GetNewDirection(atan2(velocity.y, velocity.x) + PI); // Nouvelle direction
-
+        
             
         }
     }
+
+      velocity = Vector2Add(velocity, separation);
+      velocity = Vector2Add(velocity, alignment);
+      velocity = Vector2Add(velocity, cohesion);
 }
 
 

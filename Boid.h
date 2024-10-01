@@ -13,11 +13,12 @@ public:
     Vector2 _position = Vector2{0, 0};
     int _radius = 1;
     
-    Vector2 velocity = Vector2{3, 3}; // Vitesse sous forme de Vector2
+    Vector2 velocity = Vector2{1, 1}; // Vitesse sous forme de Vector2
+
     
-    float minimumDistance = 1.0f;
-    float maxPerceiveDistance = 1.0f;
-    float cohesionRadius = 1.0f;
+    float minimumDistance = 25.0f;
+    float maxPerceiveDistance = 0.45f;
+    float cohesionRadius = 0.1f;
     float maxSteer = 1.0f;
     float setMaxSpeed = 5.0f;
     float RandomAngle();
