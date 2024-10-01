@@ -52,13 +52,29 @@ for (const Boid& other : flock)
         separation = Vector2Add(separation, Vector2Scale(normDiff, (minimumDistance - distance) * 0.1));
     }
 
+    // if (distance > 0 && distance < minimumDistance * 5)
+    // {
+    //     // Allignment
+    //     alignment = Vector2Add(alignment, other.velocity);
+    //
+    //     // Cohesion
+    //     cohesion = Vector2Add(cohesion, other._position);
+    //     neighborCount++;
+    // }
+
+    float mouseX = float(GetMouseX());
+    float mouseY = float(GetMouseY());
+    Vector2 MousePos = Vector2{mouseX, mouseY};
+
+
+    // Parameter for mouse follow
     if (distance > 0 && distance < minimumDistance * 5)
     {
         // Allignment
-        alignment = Vector2Add(alignment, other.velocity);
+        alignment = Vector2Add(alignment, MousePos);
 
         // Cohesion
-        cohesion = Vector2Add(cohesion, other._position);
+        cohesion = Vector2Add(cohesion, MousePos);
         neighborCount++;
     }
 }
@@ -70,7 +86,7 @@ for (const Boid& other : flock)
 
         cohesion = Vector2Scale(cohesion, 1.0f / float(neighborCount));
         const Vector2 cohesionForce = Vector2Subtract(cohesion, _position);
-        cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 0.1f);
+        cohesion = Vector2Scale(Vector2Normalize(cohesionForce), 3.f);
     }
     
     // Mise à jour de la position

@@ -10,7 +10,7 @@ int main()
     InitWindow(800, 800, "Inter AI MAS");
     SetTargetFPS(60);
 
-    int Amount = 100;
+    int Amount = 1000;
     std::vector<Boid> flock;
 
     for (int i = 0; i < Amount; ++i)
