@@ -25,8 +25,8 @@ int main()
 
     
     
-    Obstacles obstacle1 = Obstacles(45, 110, Vector2{75, 150});
-    Obstacles obstacle2 = Obstacles(75, 100, Vector2{250, 260});
+    Obstacles obstacle1 = Obstacles(45, 110, Vector2{175, 350});
+    Obstacles obstacle2 = Obstacles(75, 100, Vector2{450, 460});
     
     
     Obstacles obstacles[] = { obstacle1, obstacle2 };
