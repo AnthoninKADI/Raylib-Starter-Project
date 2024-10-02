@@ -6,19 +6,19 @@
 
 const int screenWidth = 800;
 const int screenHeight = 600;
-const int rows = 10;
-const int cols = 10;
+const int rows = 20;
+const int cols = 20;
 const int rectWidth = 50;
 const int rectHeight = 50;
-const int padding = 2;
+const int padding = 1;
 
 
 Color normalColor = WHITE;
 Color difficultColor = BROWN;
 Color challengingColor = ORANGE;
-Color obstacleColor = DARKGRAY;
+Color roadColor = BLACK;
 Color pathColor = SKYBLUE;
-Color emptyColor = BLACK;
+Color emptyColor = DARKGRAY;
 
 
 enum Terrain
@@ -26,7 +26,7 @@ enum Terrain
     Normal,
     Challenging,
     Difficult,
-    Obstacle
+    Road
 };
 
 struct Node
@@ -58,7 +58,7 @@ float getTerrainCost(const Node& node)
         return 1.5f;
     case Difficult:
         return 2.0f;
-    case Obstacle:
+    case Road:
         return std::numeric_limits<float>::infinity();
     }
 
@@ -164,9 +164,9 @@ void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vec
             {
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
             }
-            else if (node.obstacle || node.terrain == Obstacle)
+            else if (node.obstacle || node.terrain == Road)
             {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, obstacleColor);
+                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, roadColor);
             }
             else if (node.terrain == Normal)
             {
@@ -193,7 +193,7 @@ bool endSelected = false;
 
 int main()
 {
-    InitWindow(screenWidth, screenHeight, "Astar Raylib");
+    InitWindow(screenWidth, screenHeight, "City Sim");
     SetTargetFPS(60);
 
     std::vector<std::vector<Node>> grid(rows, std::vector<Node>(cols));
@@ -208,7 +208,7 @@ int main()
 
             if (grid[i][j].obstacle)
             {
-                grid[i][j].terrain = Obstacle;
+                grid[i][j].terrain = Road;
             }
             else
             {
@@ -221,39 +221,78 @@ int main()
     Node* start = grid[0].data();
     Node* goal = &grid[rows - 1][cols - 1];
 
+    grid[1][1].obstacle = true;
+    grid[1][2].obstacle = true;
+    grid[1][3].obstacle = true;
+    grid[1][4].obstacle = true;
+    grid[1][5].obstacle = true;
     grid[1][6].obstacle = true;
     grid[1][7].obstacle = true;
     grid[1][8].obstacle = true;
+    grid[1][9].obstacle = true;
+    grid[1][10].obstacle = true;
 
     grid[2][1].obstacle = true;
-    grid[2][2].obstacle = true;
-    grid[2][3].terrain = Challenging;
-    grid[2][4].obstacle = true;
-    grid[2][5].terrain = Challenging;
+    grid[3][1].obstacle = true;
+    grid[4][1].obstacle = true;
+    grid[5][1].obstacle = true;
+    grid[6][1].obstacle = true;
+    grid[7][1].obstacle = true;
+    grid[7][2].obstacle = true;
+    grid[7][3].obstacle = true;
+    grid[7][4].obstacle = true;
+    grid[7][6].obstacle = true;
+    grid[7][7].obstacle = true;
+    grid[7][8].obstacle = true;
+    grid[7][9].obstacle = true;
 
+    grid[2][5].obstacle = true;
+    grid[3][5].obstacle = true;
     grid[4][5].obstacle = true;
-    grid[4][7].terrain = Difficult;
-    grid[4][8].terrain = Difficult;
-    grid[4][9].obstacle = true;
-
-    grid[6][6].terrain = Challenging;
-    grid[6][7].obstacle = true;
-    grid[6][9].terrain = Difficult;
-
-    grid[8][5].obstacle = true;
-    grid[8][6].terrain = Challenging;
-    grid[8][7].obstacle = true;
-
     grid[5][5].obstacle = true;
+    grid[6][5].obstacle = true;
+    grid[7][5].obstacle = true;
+    grid[8][5].obstacle = true;
+    grid[9][5].obstacle = true;
+    grid[10][5].obstacle = true;
+    grid[11][5].obstacle = true;
+    grid[12][5].obstacle = true;
+    grid[13][5].obstacle = true;
+    grid[14][5].obstacle = true;
 
-    grid[6][0].obstacle = true;
-    grid[6][1].terrain = Difficult;
-    grid[6][2].obstacle = true;
+    grid[14][6].obstacle = true;
+    grid[14][7].obstacle = true;
+    grid[14][8].obstacle = true;
+    grid[14][9].obstacle = true;
+    grid[14][10].obstacle = true;
 
-    grid[5][3].obstacle = true;
-
-    grid[8][2].obstacle = true;
-    grid[8][3].terrain = Difficult;
+    grid[2][10].obstacle = true;
+    grid[3][10].obstacle = true;
+    grid[4][10].obstacle = true;
+    grid[5][10].obstacle = true;
+    grid[6][10].obstacle = true;
+    grid[7][10].obstacle = true;
+    grid[8][10].obstacle = true;
+    grid[9][10].obstacle = true;
+    grid[10][10].obstacle = true;
+    grid[11][10].obstacle = true;
+    grid[12][10].obstacle = true;
+    grid[13][10].obstacle = true;
+    
+    // grid[2][3].terrain = Challenging;
+    // grid[2][5].terrain = Challenging;
+    //
+    // grid[4][7].terrain = Difficult;
+    // grid[4][8].terrain = Difficult;
+    //
+    // grid[6][6].terrain = Challenging;
+    // grid[6][9].terrain = Difficult;
+    //
+    // grid[8][6].terrain = Challenging;
+    //
+    // grid[6][1].terrain = Difficult;
+    //
+    // grid[8][3].terrain = Difficult;
 
 
     while (!WindowShouldClose())
