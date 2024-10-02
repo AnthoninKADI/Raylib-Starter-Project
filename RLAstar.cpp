@@ -12,6 +12,7 @@ const int rectWidth = 50;
 const int rectHeight = 50;
 const int padding = 1;
 
+float importScale = 0.4f;
 
 Color normalColor = WHITE;
 Color difficultColor = BROWN;
@@ -20,12 +21,17 @@ Color roadColor = BLACK;
 Color pathColor = SKYBLUE;
 Color emptyColor = DARKGRAY;
 
-
 enum Terrain
 {
     Normal,
     Challenging,
     Difficult,
+    BlueShop,
+    RedShop,
+    PurpleShop,
+    BlueHouse,
+    RedHouse,
+    PurpleHouse,
     Road
 };
 
@@ -58,6 +64,18 @@ float getTerrainCost(const Node& node)
         return 1.5f;
     case Difficult:
         return 2.0f;
+    case BlueShop:
+        return 1.0f;
+    case RedShop:
+        return 1.0f;
+    case PurpleShop:
+        return 1.0f;
+    case BlueHouse:
+        return 1.0f;
+    case RedHouse:
+        return 1.0f;
+    case PurpleHouse:
+        return 1.0f;
     case Road:
         return std::numeric_limits<float>::infinity();
     }
@@ -153,14 +171,63 @@ std::vector<Node*> aStar(Node* start, const Node* goal, std::vector<std::vector<
     return {};
 }
 
-void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vector<Node*>& path)
+void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vector<Node*>& path, Texture2D blueShop, Texture2D redShop, Texture2D purpleShop, Texture2D blueHouse, Texture2D redHouse, Texture2D purpleHouse)
 {
     for (int i = 0; i < rows; ++i)
     {
         for (int j = 0; j < cols; ++j)
         {
             const Node& node = grid[j][i];
-            if (std::find(path.begin(), path.end(), &node) != path.end())
+
+            if (node.terrain == BlueShop) 
+            {
+                DrawTextureEx(blueShop, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (node.terrain == RedShop) 
+            {
+                DrawTextureEx(redShop, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (node.terrain == PurpleShop) 
+            {
+                DrawTextureEx(purpleShop, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (node.terrain == BlueHouse) 
+            {
+                DrawTextureEx(blueHouse, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (node.terrain == RedHouse) 
+            {
+                DrawTextureEx(redHouse, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (node.terrain == PurpleHouse) 
+            {
+                DrawTextureEx(purpleHouse, 
+                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
+                              0.0f, 
+                              importScale, 
+                              WHITE); 
+            }
+            else if (std::find(path.begin(), path.end(), &node) != path.end())
             {
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
             }
@@ -195,6 +262,14 @@ int main()
 {
     InitWindow(screenWidth, screenHeight, "City Sim");
     SetTargetFPS(60);
+    
+    Texture2D blueShop = LoadTexture("resources/BlueShop.png");
+    Texture2D redShop = LoadTexture("resources/RedShop.png");
+    Texture2D purpleShop = LoadTexture("resources/PurpleShop.png");
+    
+    Texture2D blueHouse = LoadTexture("resources/BlueHouse.png");
+    Texture2D redHouse = LoadTexture("resources/RedHouse.png");
+    Texture2D purpleHouse = LoadTexture("resources/PurpleHouse.png");
 
     std::vector<std::vector<Node>> grid(rows, std::vector<Node>(cols));
 
@@ -278,82 +353,40 @@ int main()
     grid[11][10].obstacle = true;
     grid[12][10].obstacle = true;
     grid[13][10].obstacle = true;
-    
-    // grid[2][3].terrain = Challenging;
-    // grid[2][5].terrain = Challenging;
-    //
-    // grid[4][7].terrain = Difficult;
-    // grid[4][8].terrain = Difficult;
-    //
-    // grid[6][6].terrain = Challenging;
-    // grid[6][9].terrain = Difficult;
-    //
-    // grid[8][6].terrain = Challenging;
-    //
-    // grid[6][1].terrain = Difficult;
-    //
-    // grid[8][3].terrain = Difficult;
 
+    grid[2][0].terrain = BlueShop; 
+    grid[15][7].terrain = RedShop; 
+    grid[10][4].terrain = PurpleShop; 
+    grid[9][9].terrain = BlueHouse; 
+    grid[3][4].terrain = RedHouse; 
+    grid[2][7].terrain = PurpleHouse; 
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(emptyColor);
 
-        if (!start) startSelected = false;
-        if (!goal) endSelected = false;
-
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-
-        {
-            const Vector2 mousePos = GetMousePosition();
-
-            const int x = static_cast<int>(mousePos.x) / rectWidth;
-
-            const int y = static_cast<int>(mousePos.y) / rectHeight;
-
-            if (x >= 0 && x < rows && y >= 0 && y < cols)
-
-            {
-
-                if (!startSelected)
-
-                {
-                    start = &grid[x][y];
-                    startSelected = true;
-                    printf("start ");
-
-                }
-
-                else if (!endSelected && &grid[x][y] != start)
-
-                {
-                    goal = &grid[x][y];
-                    endSelected = true;
-                    printf(" end \n");
-
-                }
-
-            }
-        }
-        DrawPathWithGrid(grid, {});
+        DrawPathWithGrid(grid, {}, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
 
         if (startSelected && endSelected && !start->obstacle && !goal->obstacle)
-
         {
             const std::vector<Node*> path = aStar(start, goal, grid);
-            // Print 
-            DrawPathWithGrid(grid, path);
+            DrawPathWithGrid(grid, path, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
 
             if (start != nullptr) DrawRectangle(start->x * rectWidth, start->y * rectHeight, rectWidth - 1, rectHeight - 1, GREEN);
 
             if (goal != nullptr) DrawRectangle(goal->x * rectWidth, goal->y * rectHeight, rectWidth - 1, rectHeight - 1, RED);
-
         }
         EndDrawing();
     }
-
+    
+    UnloadTexture(blueShop);
+    UnloadTexture(redShop);
+    UnloadTexture(purpleShop);
+    UnloadTexture(blueHouse);
+    UnloadTexture(redHouse);
+    UnloadTexture(purpleHouse);
     CloseWindow();
-    return 0;
 
+    return 0;
 }
