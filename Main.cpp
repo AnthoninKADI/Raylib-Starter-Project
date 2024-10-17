@@ -234,7 +234,7 @@ int main()
         }
     }
 
-    Node* start = grid[0].data();
+    Node* start = &grid[0][0];
     Node* goal = &grid[rows - 1][cols - 1];
 
     grid[1][1].obstacle = true;
@@ -295,6 +295,10 @@ int main()
     grid[12][10].obstacle = true;
     grid[13][10].obstacle = true;
 
+    Node* destination1 = &grid[15][7]; // Position de destination 
+    Node* destination2 = &grid[2][0]; 
+    Node* destination3 = &grid[10][4];
+
     grid[2][0].terrain = BlueShop; 
     grid[15][7].terrain = RedShop; 
     grid[10][4].terrain = PurpleShop; 
@@ -303,17 +307,17 @@ int main()
     grid[2][7].terrain = PurpleHouse;
 
     std::vector<Citizen> citizens; //
-    citizens.emplace_back(3, 5, 7.0f, RED);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
-    citizens.emplace_back(9, 10, 7.0f, BLUE); //
-    citizens.emplace_back(1, 7, 7.0f, PINK);
+    citizens.emplace_back(3, 5, 7.0f, RED, destination1);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
+    citizens.emplace_back(9, 10, 7.0f, BLUE, destination2); //
+    citizens.emplace_back(1, 7, 7.0f, PINK, destination3);
 
     while (!WindowShouldClose())
     {
 
-        for (auto& citizen : citizens)  //
-        {                               //
-            // citizen.Update(grid);       //
-        }                               //
+        for (auto& citizen : citizens)
+        {
+            citizen.Update(grid);
+        }                             
         
         BeginDrawing();
         ClearBackground(emptyColor);
@@ -321,10 +325,10 @@ int main()
         DrawPathWithGrid(grid, {}, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
 
         // Dessin des citoyens
-        for (const auto& citizen : citizens)    //
-        {                                       //
-            citizen.Draw();                     //
-        }                                       //
+        for (const auto& citizen : citizens)
+        {
+            citizen.Draw();
+        }                                   
         
         EndDrawing();
     }

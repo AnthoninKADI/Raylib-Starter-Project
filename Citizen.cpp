@@ -1,34 +1,41 @@
 ﻿#include "Citizen.h"
 
-Citizen::Citizen(int startX, int startY, float size, Color color)
-    : position{(float)startX, (float)startY}, size(size), color(color) {}
+Citizen::Citizen(int startX, int startY, float size, Color color, const Node* dest)
+    : position{(float)startX, (float)startY}, size(size), color(color), destination(dest) {}
 
 void Citizen::Update(const std::vector<std::vector<Node>>& grid)
 {
-    int currentX = (int)position.x;
-    int currentY = (int)position.y;
+    if (destination == nullptr) return; // No destination set
 
-    // Mouvement aléatoire simple sur les cellules "obstacle"
-    int dx = GetRandomValue(-1, 1);
-    int dy = GetRandomValue(-1, 1);
+    // Calculate direction towards the destination
+    float directionX = destination->x - position.x;
+    float directionY = destination->y - position.y;
 
-    int newX = currentX + dx;
-    int newY = currentY + dy;
-
-    // Vérification si la nouvelle position est valide et est un obstacle
-    if (newX >= 0 && newX < grid.size() && newY >= 0 && newY < grid[0].size())
+    // Calculate distance to destination
+    float distance = sqrt(directionX * directionX + directionY * directionY);
+    
+    // Normalize the direction vector
+    if (distance > 0.0f)
     {
-        if (CanMoveTo(newX, newY, grid))
+        directionX /= distance;
+        directionY /= distance;
+
+        // Move the citizen toward the destination
+        position.x += directionX * speed;
+        position.y += directionY * speed;
+
+        // Check if the citizen has reached the destination
+        if (distance < 1.0f)
         {
-            position.x = (float)newX;
-            position.y = (float)newY;
+            position.x = (float)destination->x; // Snap to destination
+            position.y = (float)destination->y; // Snap to destination
         }
     }
 }
 
 bool Citizen::CanMoveTo(int x, int y, const std::vector<std::vector<Node>>& grid)
 {
-    return grid[x][y].obstacle;  // Les citoyens ne peuvent se déplacer que sur les cases avec "obstacle = true"
+    return !grid[x][y].obstacle; // Citizens can only move to non-obstacle cells
 }
 
 void Citizen::Draw() const
