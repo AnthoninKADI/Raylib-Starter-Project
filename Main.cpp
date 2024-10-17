@@ -303,16 +303,16 @@ int main()
     grid[2][7].terrain = PurpleHouse;
 
     std::vector<Citizen> citizens; //
-    citizens.emplace_back(2, 0, 7.0f, RED);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
-    citizens.emplace_back(14, 6, 7.0f, BLUE); //
-    citizens.emplace_back(9, 10, 7.0f, PINK);
+    citizens.emplace_back(3, 5, 7.0f, RED);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
+    citizens.emplace_back(9, 10, 7.0f, BLUE); //
+    citizens.emplace_back(1, 7, 7.0f, PINK);
 
     while (!WindowShouldClose())
     {
 
         for (auto& citizen : citizens)  //
         {                               //
-            citizen.Update(grid);       //
+            // citizen.Update(grid);       //
         }                               //
         
         BeginDrawing();
