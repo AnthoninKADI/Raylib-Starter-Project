@@ -172,7 +172,7 @@ void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vec
             {
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
             }
-            else if (node.obstacle || node.terrain == Road)
+            else if (node.terrain == Road)
             {
                 DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, roadColor);
             }
@@ -237,63 +237,63 @@ int main()
     Node* start = &grid[0][0];
     Node* goal = &grid[rows - 1][cols - 1];
 
-    grid[1][1].obstacle = true;
-    grid[1][2].obstacle = true;
-    grid[1][3].obstacle = true;
-    grid[1][4].obstacle = true;
-    grid[1][5].obstacle = true;
-    grid[1][6].obstacle = true;
-    grid[1][7].obstacle = true;
-    grid[1][8].obstacle = true;
-    grid[1][9].obstacle = true;
-    grid[1][10].obstacle = true;
+    grid[1][1].terrain = Road;
+    grid[1][2].terrain = Road;
+    grid[1][3].terrain = Road;
+    grid[1][4].terrain = Road;
+    grid[1][5].terrain = Road;
+    grid[1][6].terrain = Road;
+    grid[1][7].terrain = Road;
+    grid[1][8].terrain = Road;
+    grid[1][9].terrain = Road;
+    grid[1][10].terrain = Road;
 
-    grid[2][1].obstacle = true;
-    grid[3][1].obstacle = true;
-    grid[4][1].obstacle = true;
-    grid[5][1].obstacle = true;
-    grid[6][1].obstacle = true;
-    grid[7][1].obstacle = true;
-    grid[7][2].obstacle = true;
-    grid[7][3].obstacle = true;
-    grid[7][4].obstacle = true;
-    grid[7][6].obstacle = true;
-    grid[7][7].obstacle = true;
-    grid[7][8].obstacle = true;
-    grid[7][9].obstacle = true;
+    grid[2][1].terrain = Road;
+    grid[3][1].terrain = Road;
+    grid[4][1].terrain = Road;
+    grid[5][1].terrain = Road;
+    grid[6][1].terrain = Road;
+    grid[7][1].terrain = Road;
+    grid[7][2].terrain = Road;
+    grid[7][3].terrain = Road;
+    grid[7][4].terrain = Road;
+    grid[7][6].terrain = Road;
+    grid[7][7].terrain = Road;
+    grid[7][8].terrain = Road;
+    grid[7][9].terrain = Road;
 
-    grid[2][5].obstacle = true;
-    grid[3][5].obstacle = true;
-    grid[4][5].obstacle = true;
-    grid[5][5].obstacle = true;
-    grid[6][5].obstacle = true;
-    grid[7][5].obstacle = true;
-    grid[8][5].obstacle = true;
-    grid[9][5].obstacle = true;
-    grid[10][5].obstacle = true;
-    grid[11][5].obstacle = true;
-    grid[12][5].obstacle = true;
-    grid[13][5].obstacle = true;
-    grid[14][5].obstacle = true;
+    grid[2][5].terrain = Road;
+    grid[3][5].terrain = Road;
+    grid[4][5].terrain = Road;
+    grid[5][5].terrain = Road;
+    grid[6][5].terrain = Road;
+    grid[7][5].terrain = Road;
+    grid[8][5].terrain = Road;
+    grid[9][5].terrain = Road;
+    grid[10][5].terrain = Road;
+    grid[11][5].terrain = Road;
+    grid[12][5].terrain = Road;
+    grid[13][5].terrain = Road;
+    grid[14][5].terrain = Road;
 
-    grid[14][6].obstacle = true;
-    grid[14][7].obstacle = true;
-    grid[14][8].obstacle = true;
-    grid[14][9].obstacle = true;
-    grid[14][10].obstacle = true;
+    grid[14][6].terrain = Road;
+    grid[14][7].terrain = Road;
+    grid[14][8].terrain = Road;
+    grid[14][9].terrain = Road;
+    grid[14][10].terrain = Road;
 
-    grid[2][10].obstacle = true;
-    grid[3][10].obstacle = true;
-    grid[4][10].obstacle = true;
-    grid[5][10].obstacle = true;
-    grid[6][10].obstacle = true;
-    grid[7][10].obstacle = true;
-    grid[8][10].obstacle = true;
-    grid[9][10].obstacle = true;
-    grid[10][10].obstacle = true;
-    grid[11][10].obstacle = true;
-    grid[12][10].obstacle = true;
-    grid[13][10].obstacle = true;
+    grid[2][10].terrain = Road;
+    grid[3][10].terrain = Road;
+    grid[4][10].terrain = Road;
+    grid[5][10].terrain = Road;
+    grid[6][10].terrain = Road;
+    grid[7][10].terrain = Road;
+    grid[8][10].terrain = Road;
+    grid[9][10].terrain = Road;
+    grid[10][10].terrain = Road;
+    grid[11][10].terrain = Road;
+    grid[12][10].terrain = Road;
+    grid[13][10].terrain = Road;
 
     Node* destination1 = &grid[15][7]; // Position de destination 
     Node* destination2 = &grid[2][0]; 
