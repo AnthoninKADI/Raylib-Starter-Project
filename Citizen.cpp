@@ -1,41 +1,35 @@
 ﻿#include "Citizen.h"
 
-Citizen::Citizen(int startX, int startY, float size, Color color, const Node* dest)
-    : position{(float)startX, (float)startY}, size(size), color(color), destination(dest) {}
+Citizen::Citizen(int startX, int startY, float size, Color color, const Node* destination)
+    : position{(float)startX, (float)startY}, size(size), color(color), speed(0.02f) 
+{
+    this->destination = { (float)destination->x, (float)destination->y };
+}
 
 void Citizen::Update(const std::vector<std::vector<Node>>& grid)
 {
-    if (destination == nullptr) return; // No destination set
+    int currentX = (int)position.x;
+    int currentY = (int)position.y;
 
-    // Calculate direction towards the destination
-    float directionX = destination->x - position.x;
-    float directionY = destination->y - position.y;
+    // Calculer le vecteur de direction vers la destination
+    Vector2 direction = { destination.x - position.x, destination.y - position.y };
+    float distanceToDestination = sqrt(direction.x * direction.x + direction.y * direction.y);
 
-    // Calculate distance to destination
-    float distance = sqrt(directionX * directionX + directionY * directionY);
-    
-    // Normalize the direction vector
-    if (distance > 0.0f)
+    // Normaliser la direction
+    if (distanceToDestination > 0.0f)
     {
-        directionX /= distance;
-        directionY /= distance;
+        direction.x /= distanceToDestination;
+        direction.y /= distanceToDestination;
 
-        // Move the citizen toward the destination
-        position.x += directionX * speed;
-        position.y += directionY * speed;
-
-        // Check if the citizen has reached the destination
-        if (distance < 1.0f)
-        {
-            position.x = (float)destination->x; // Snap to destination
-            position.y = (float)destination->y; // Snap to destination
-        }
+        // Déplacer le citoyen lentement vers la destination
+        position.x += direction.x * speed;
+        position.y += direction.y * speed;
     }
 }
 
 bool Citizen::CanMoveTo(int x, int y, const std::vector<std::vector<Node>>& grid)
 {
-    return !grid[x][y].obstacle; // Citizens can only move to non-obstacle cells
+    return !grid[x][y].obstacle;  // Les citoyens ne peuvent se déplacer que sur les cases sans obstacle
 }
 
 void Citizen::Draw() const

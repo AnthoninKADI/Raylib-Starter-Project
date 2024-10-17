@@ -9,7 +9,7 @@ class Citizen
 {
 public:
     Citizen(int startX, int startY, float size, Color color, const Node* destination);
-    
+
     void Update(const std::vector<std::vector<Node>>& grid);
     void Draw() const;
 
@@ -17,8 +17,8 @@ private:
     Vector2 position;
     float size;
     Color color;
-    const Node* destination; // Destination node pointer
-    float speed = 1.0f;      // Speed of the citizen
+    Vector2 destination;  // Destination vers laquelle se déplacer
+    float speed;          // Vitesse de déplacement
 
     bool CanMoveTo(int x, int y, const std::vector<std::vector<Node>>& grid);
 };
