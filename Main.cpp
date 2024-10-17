@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include "raylib.h"
+#include "Citizen.h"
+#include "Node.h"
 
 const int screenWidth = 800;
 const int screenHeight = 600;
@@ -20,67 +22,6 @@ Color challengingColor = ORANGE;
 Color roadColor = BLACK;
 Color pathColor = SKYBLUE;
 Color emptyColor = DARKGRAY;
-
-enum Terrain
-{
-    Normal,
-    Challenging,
-    Difficult,
-    BlueShop,
-    RedShop,
-    PurpleShop,
-    BlueHouse,
-    RedHouse,
-    PurpleHouse,
-    Road
-};
-
-struct Node
-{
-    int x, y;
-    float g, h, f;
-    bool obstacle;
-    Node* parent;
-    Terrain terrain;
-    float CostMultiplier;
-    bool operator==(const Node& other) const
-    {
-        return x == other.x && y == other.y;
-    }
-};
-
-float distance(const Node& node1, const Node& node2)
-{
-    return sqrt(pow(node1.x - node2.x, 2) + pow(node1.y - node2.y, 2));
-}
-
-float getTerrainCost(const Node& node)
-{
-    switch (node.terrain)
-    {
-    case Normal:
-        return 1.0f;
-    case Challenging:
-        return 1.5f;
-    case Difficult:
-        return 2.0f;
-    case BlueShop:
-        return 1.0f;
-    case RedShop:
-        return 1.0f;
-    case PurpleShop:
-        return 1.0f;
-    case BlueHouse:
-        return 1.0f;
-    case RedHouse:
-        return 1.0f;
-    case PurpleHouse:
-        return 1.0f;
-    case Road:
-        return std::numeric_limits<float>::infinity();
-    }
-
-}
 
 std::vector<Node*> aStar(Node* start, const Node* goal, std::vector<std::vector<Node>>& grid)
 {
@@ -359,24 +300,32 @@ int main()
     grid[10][4].terrain = PurpleShop; 
     grid[9][9].terrain = BlueHouse; 
     grid[3][4].terrain = RedHouse; 
-    grid[2][7].terrain = PurpleHouse; 
+    grid[2][7].terrain = PurpleHouse;
+
+    std::vector<Citizen> citizens; //
+    citizens.emplace_back(2, 0, 7.0f, RED);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
+    citizens.emplace_back(14, 6, 7.0f, BLUE); //
+    citizens.emplace_back(9, 10, 7.0f, PINK);
 
     while (!WindowShouldClose())
     {
+
+        for (auto& citizen : citizens)  //
+        {                               //
+            citizen.Update(grid);       //
+        }                               //
+        
         BeginDrawing();
         ClearBackground(emptyColor);
 
         DrawPathWithGrid(grid, {}, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
 
-        if (startSelected && endSelected && !start->obstacle && !goal->obstacle)
-        {
-            const std::vector<Node*> path = aStar(start, goal, grid);
-            DrawPathWithGrid(grid, path, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
-
-            if (start != nullptr) DrawRectangle(start->x * rectWidth, start->y * rectHeight, rectWidth - 1, rectHeight - 1, GREEN);
-
-            if (goal != nullptr) DrawRectangle(goal->x * rectWidth, goal->y * rectHeight, rectWidth - 1, rectHeight - 1, RED);
-        }
+        // Dessin des citoyens
+        for (const auto& citizen : citizens)    //
+        {                                       //
+            citizen.Draw();                     //
+        }                                       //
+        
         EndDrawing();
     }
     
