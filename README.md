@@ -23,7 +23,7 @@ Autonomous city sim
 detail your choices and give an overview of the framerate obtained with 1, 10, 100 and 500 agents or more if you can ! 
 Give a simple explanation of the improvements you can think of to improve your system and solve the questions from the chosen problem.
 
---> 1 - 500 agents : 60 fps / we start to have some fps loss at 1200 agents
+--> 1 - 500 agents : 60 fps / we start to have some fps loss at 1200 agents. 
 For FPS, they will start to drop the more we increase the number of citizens because each citizen will look for their destination and calculate the most optimal path to get there.
 
 the main problem with my code is the citizen movement system, which means that they are one in a box so we can easily find ourselves stuck in certain situations like a crossroads or if there are a lot of citizens on the map this which would cause a general blockage, 
