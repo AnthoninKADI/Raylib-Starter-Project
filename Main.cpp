@@ -1,345 +1,220 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cmath>
 #include "raylib.h"
-#include "Citizen.h"
-#include "Node.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
 
-const int screenWidth = 800;
-const int screenHeight = 600;
-const int rows = 20;
-const int cols = 20;
-const int rectWidth = 50;
-const int rectHeight = 50;
-const int padding = 1;
+#define GRID_SIZE 10
+#define CELL_SIZE 50
+#define MAX_PATH_LENGTH 100
 
-float importScale = 0.4f;
+typedef struct {
+    int x;
+    int y;
+} Cell;
 
-Color normalColor = WHITE;
-Color difficultColor = BROWN;
-Color challengingColor = ORANGE;
-Color roadColor = BLACK;
-Color pathColor = SKYBLUE;
-Color emptyColor = DARKGRAY;
+typedef struct {
+    Cell cells[MAX_PATH_LENGTH];
+    int length;
+} Path;
 
-std::vector<Node*> aStar(Node* start, const Node* goal, std::vector<std::vector<Node>>& grid)
-{
-    start->terrain = Normal;
-    start->CostMultiplier = getTerrainCost(*start);
+typedef struct {
+    int x;
+    int y;
+} Ball;
 
-    std::vector<Node*> openList, closedList;
-    start->g = 0;
-    start->h = distance(*start, *goal);
-    start->f = start->g + start->h;
-    openList.push_back(start);
+Ball ball = {1, 1}; // Position initiale de la balle
+Cell start = {1, 1}; // Point de départ
+Cell end = {8, 1};   // Point d'arrivée
 
-    while (!openList.empty())
-    {
-        auto currentNode = std::min_element(openList.begin(), openList.end(), [](const Node* a, const Node* b)
-            {
-                return a->f < b->f;
-            });
-        Node* current = *currentNode;
-        openList.erase(currentNode);
+// Représentation de la grille : 0 = Normal, 1 = Route, 2 = Texture1, 3 = Texture2
+int grid[GRID_SIZE][GRID_SIZE] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+    {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
+    {0, 1, 0, 0, 1, 1, 1, 1, 1, 1},
+    {0, 1, 0, 0, 1, 0, 0, 0, 0, 0},
+    {0, 1, 0, 0, 1, 0, 0, 0, 0, 0},
+    {0, 1, 0, 0, 1, 1, 1, 1, 1, 0},
+    {0, 1, 0, 0, 0, 0, 1, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
 
-        closedList.push_back(current);
+// Direction pour les mouvements (haut, bas, gauche, droite)
+int directions[4][2] = {
+    {-1, 0}, // haut
+    {1, 0},  // bas
+    {0, -1}, // gauche
+    {0, 1}   // droite
+};
 
-        if (*current == *goal)
-        {
-            std::vector<Node*> path;
-            while (current != nullptr)
-            {
-                path.push_back(current);
-                current = current->parent;
+// Variable de vitesse de la balle
+float ballSpeed = 1.0f; // Vitesse de la balle
+float moveTimer = 0.0f; // Timer pour contrôler le mouvement
+float moveInterval = 0.1f; // Temps entre chaque mouvement (en secondes)
+
+Texture2D texture1; // Texture pour le 2
+Texture2D texture2; // Texture pour le 3
+
+void DrawGrid() {
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (grid[i][j] == 0) {
+                DrawRectangle(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE, WHITE);
+            } else if (grid[i][j] == 1) {
+                DrawRectangle(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE, BLACK);
+            } else if (grid[i][j] == 2) {
+                DrawTexture(texture1, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 2
+            } else if (grid[i][j] == 3) {
+                DrawTexture(texture2, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
             }
-            std::reverse(path.begin(), path.end());
+        }
+    }
+}
+
+int IsValid(int x, int y) {
+    return (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE && (grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 3));
+}
+
+Path AStar(Cell start, Cell end) {
+    Path path = {0};
+    Cell cameFrom[GRID_SIZE][GRID_SIZE] = {0};
+    int gScore[GRID_SIZE][GRID_SIZE] = {0};
+    int fScore[GRID_SIZE][GRID_SIZE] = {0};
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            gScore[i][j] = INT_MAX;
+            fScore[i][j] = INT_MAX;
+        }
+    }
+
+    gScore[start.y][start.x] = 0;
+    fScore[start.y][start.x] = abs(start.x - end.x) + abs(start.y - end.y);
+
+    Cell openSet[GRID_SIZE * GRID_SIZE];
+    int openSetCount = 0;
+    openSet[openSetCount++] = start;
+
+    while (openSetCount > 0) {
+        int currentIndex = 0;
+        for (int i = 1; i < openSetCount; i++) {
+            if (fScore[openSet[i].y][openSet[i].x] < fScore[openSet[currentIndex].y][openSet[currentIndex].x]) {
+                currentIndex = i;
+            }
+        }
+
+        Cell current = openSet[currentIndex];
+
+        if (current.x == end.x && current.y == end.y) {
+            Cell temp = current;
+            while (1) {
+                path.cells[path.length++] = temp;
+                if (temp.x == start.x && temp.y == start.y) break;
+                temp = cameFrom[temp.y][temp.x];
+            }
+            for (int i = 0; i < path.length / 2; i++) {
+                Cell swap = path.cells[i];
+                path.cells[i] = path.cells[path.length - 1 - i];
+                path.cells[path.length - 1 - i] = swap;
+            }
             return path;
         }
 
-        for (int dx = -1; dx <= 1; ++dx)
-        {
-            for (int dy = -1; dy <= 1; ++dy)
-            {
-                if (dx == 0 && dy == 0)
-                {
-                    continue;
-                }
-                const int newX = current->x + dx;
-                const int newY = current->y + dy;
+        for (int i = currentIndex; i < openSetCount - 1; i++) {
+            openSet[i] = openSet[i + 1];
+        }
+        openSetCount--;
 
-                if (newX < 0 || newX >= rows || newY < 0 || newY >= cols)
-                {
-                    continue;
-                }
+        for (int i = 0; i < 4; i++) {
+            int neighborX = current.x + directions[i][1];
+            int neighborY = current.y + directions[i][0];
+            if (IsValid(neighborX, neighborY)) {
+                Cell neighbor = {neighborX, neighborY};
 
-                Node& child = grid[newX][newY];
+                int tentative_gScore = gScore[current.y][current.x] + 1;
 
-                if (child.obstacle)
-                {
-                    continue;
-                }
+                if (tentative_gScore < gScore[neighbor.y][neighbor.x]) {
+                    cameFrom[neighbor.y][neighbor.x] = current;
+                    gScore[neighbor.y][neighbor.x] = tentative_gScore;
+                    fScore[neighbor.y][neighbor.x] = gScore[neighbor.y][neighbor.x] + abs(neighbor.x - end.x) + abs(neighbor.y - end.y);
 
-                if (std::find(closedList.begin(), closedList.end(), &child) != closedList.end())
-                {
-                    continue;
-                }
-
-                const float tentative_g = current->g + distance(*current, child) * child.CostMultiplier;
-                bool isNewPath = false;
-
-                auto it = find(openList.begin(), openList.end(), &child);
-                if (it == openList.end())
-                {
-                    isNewPath = true;
-                    child.h = distance(child, *goal);
-                    openList.push_back(&child);
-                }
-                else if (tentative_g < child.g)
-                {
-                    isNewPath = true;
-                }
-
-                if (isNewPath)
-                {
-                    child.parent = current;
-                    child.g = tentative_g;
-                    child.f = child.g + child.h;
+                    int alreadyInOpenSet = 0;
+                    for (int j = 0; j < openSetCount; j++) {
+                        if (openSet[j].x == neighbor.x && openSet[j].y == neighbor.y) {
+                            alreadyInOpenSet = 1;
+                            break;
+                        }
+                    }
+                    if (!alreadyInOpenSet) {
+                        openSet[openSetCount++] = neighbor;
+                    }
                 }
             }
         }
     }
-    return {};
+
+    return path;
 }
 
-void DrawPathWithGrid(const std::vector<std::vector<Node>>& grid, const std::vector<Node*>& path, Texture2D blueShop, Texture2D redShop, Texture2D purpleShop, Texture2D blueHouse, Texture2D redHouse, Texture2D purpleHouse)
-{
-    for (int i = 0; i < rows; ++i)
-    {
-        for (int j = 0; j < cols; ++j)
-        {
-            const Node& node = grid[j][i];
+int main(void) {
+    InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "Grid with Ball");
+    
+    // Charger les textures
+    texture1 = LoadTexture("path_to_texture1.png"); // Remplacez par le chemin de votre texture pour 2
+    texture2 = LoadTexture("path_to_texture2.png"); // Remplacez par le chemin de votre texture pour 3
 
-            if (node.terrain == BlueShop) 
-            {
-                DrawTextureEx(blueShop, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (node.terrain == RedShop) 
-            {
-                DrawTextureEx(redShop, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (node.terrain == PurpleShop) 
-            {
-                DrawTextureEx(purpleShop, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (node.terrain == BlueHouse) 
-            {
-                DrawTextureEx(blueHouse, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (node.terrain == RedHouse) 
-            {
-                DrawTextureEx(redHouse, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (node.terrain == PurpleHouse) 
-            {
-                DrawTextureEx(purpleHouse, 
-                              {(float)(j * rectWidth), (float)(i * rectHeight)}, 
-                              0.0f, 
-                              importScale, 
-                              WHITE); 
-            }
-            else if (std::find(path.begin(), path.end(), &node) != path.end())
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, pathColor);
-            }
-            else if (node.terrain == Road)
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, roadColor);
-            }
-            else if (node.terrain == Normal)
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, normalColor);
-            }
-            else if (node.terrain == Challenging)
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, challengingColor);
-            }
-            else if (node.terrain == Difficult)
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, difficultColor);
-            }
-            else
-            {
-                DrawRectangle(j * rectWidth, i * rectHeight, rectWidth - 1, rectHeight - 1, emptyColor);
-            }
-        }
-    }
-}
-
-bool startSelected = false;
-bool endSelected = false;
-
-int main()
-{
-    InitWindow(screenWidth, screenHeight, "City Sim");
     SetTargetFPS(60);
-    
-    Texture2D blueShop = LoadTexture("resources/BlueShop.png");
-    Texture2D redShop = LoadTexture("resources/RedShop.png");
-    Texture2D purpleShop = LoadTexture("resources/PurpleShop.png");
-    
-    Texture2D blueHouse = LoadTexture("resources/BlueHouse.png");
-    Texture2D redHouse = LoadTexture("resources/RedHouse.png");
-    Texture2D purpleHouse = LoadTexture("resources/PurpleHouse.png");
 
-    std::vector<std::vector<Node>> grid(rows, std::vector<Node>(cols));
+    Path path = {0};
 
-    for (int i = 0; i < rows; ++i)
-    {
-        for (int j = 0; j < cols; ++j)
-        {
-            grid[i][j].x = i;
-            grid[i][j].y = j;
-            grid[i][j].parent = nullptr;
+    while (!WindowShouldClose()) {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            Vector2 mousePos = GetMousePosition();
+            int gridX = mousePos.x / CELL_SIZE;
+            int gridY = mousePos.y / CELL_SIZE;
 
-            if (grid[i][j].obstacle)
-            {
-                grid[i][j].terrain = Road;
+            if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
+                if (grid[gridY][gridX] == 1 || grid[gridY][gridX] == 2 || grid[gridY][gridX] == 3) {
+                    // Changer la destination uniquement si la balle a atteint la destination actuelle
+                    if (path.length == 0 || (ball.x == end.x && ball.y == end.y)) {
+                        start.x = ball.x;  // Mettre à jour le point de départ à la position actuelle de la balle
+                        start.y = ball.y;
+                    }
+                    end.x = gridX;
+                    end.y = gridY;
+                    path = AStar(start, end);
+                }
             }
-            else
-            {
-                grid[i][j].terrain = Normal;
-            }
-            grid[i][j].CostMultiplier = getTerrainCost(grid[i][j]);
         }
-    }
 
-    Node* start = &grid[0][0];
-    Node* goal = &grid[rows - 1][cols - 1];
+        // Avancer la balle sur le chemin en fonction du timer
+        if (path.length > 0) {
+            moveTimer += GetFrameTime(); // Ajouter le temps écoulé à moveTimer
 
-    grid[1][1].terrain = Road;
-    grid[1][2].terrain = Road;
-    grid[1][3].terrain = Road;
-    grid[1][4].terrain = Road;
-    grid[1][5].terrain = Road;
-    grid[1][6].terrain = Road;
-    grid[1][7].terrain = Road;
-    grid[1][8].terrain = Road;
-    grid[1][9].terrain = Road;
-    grid[1][10].terrain = Road;
+            if (moveTimer >= moveInterval) { // Vérifier si le temps écoulé dépasse l'intervalle
+                ball.x = path.cells[0].x;
+                ball.y = path.cells[0].y;
+                for (int i = 0; i < path.length - 1; i++) {
+                    path.cells[i] = path.cells[i + 1];
+                }
+                path.length--;
+                moveTimer = 0; // Réinitialiser le timer
+            }
+        }
 
-    grid[2][1].terrain = Road;
-    grid[3][1].terrain = Road;
-    grid[4][1].terrain = Road;
-    grid[5][1].terrain = Road;
-    grid[6][1].terrain = Road;
-    grid[7][1].terrain = Road;
-    grid[7][2].terrain = Road;
-    grid[7][3].terrain = Road;
-    grid[7][4].terrain = Road;
-    grid[7][6].terrain = Road;
-    grid[7][7].terrain = Road;
-    grid[7][8].terrain = Road;
-    grid[7][9].terrain = Road;
-
-    grid[2][5].terrain = Road;
-    grid[3][5].terrain = Road;
-    grid[4][5].terrain = Road;
-    grid[5][5].terrain = Road;
-    grid[6][5].terrain = Road;
-    grid[7][5].terrain = Road;
-    grid[8][5].terrain = Road;
-    grid[9][5].terrain = Road;
-    grid[10][5].terrain = Road;
-    grid[11][5].terrain = Road;
-    grid[12][5].terrain = Road;
-    grid[13][5].terrain = Road;
-    grid[14][5].terrain = Road;
-
-    grid[14][6].terrain = Road;
-    grid[14][7].terrain = Road;
-    grid[14][8].terrain = Road;
-    grid[14][9].terrain = Road;
-    grid[14][10].terrain = Road;
-
-    grid[2][10].terrain = Road;
-    grid[3][10].terrain = Road;
-    grid[4][10].terrain = Road;
-    grid[5][10].terrain = Road;
-    grid[6][10].terrain = Road;
-    grid[7][10].terrain = Road;
-    grid[8][10].terrain = Road;
-    grid[9][10].terrain = Road;
-    grid[10][10].terrain = Road;
-    grid[11][10].terrain = Road;
-    grid[12][10].terrain = Road;
-    grid[13][10].terrain = Road;
-
-    Node* destination1 = &grid[15][7]; // Position de destination 
-    Node* destination2 = &grid[2][0]; 
-    Node* destination3 = &grid[10][4];
-
-    grid[2][0].terrain = BlueShop; 
-    grid[15][7].terrain = RedShop; 
-    grid[10][4].terrain = PurpleShop; 
-    grid[9][9].terrain = BlueHouse; 
-    grid[3][4].terrain = RedHouse; 
-    grid[2][7].terrain = PurpleHouse;
-
-    std::vector<Citizen> citizens; //
-    citizens.emplace_back(3, 5, 7.0f, RED, destination1);   // Citoyen à la position (2,0) avec taille 10, couleur rouge
-    citizens.emplace_back(9, 10, 7.0f, BLUE, destination2); //
-    citizens.emplace_back(1, 7, 7.0f, PINK, destination3);
-
-    while (!WindowShouldClose())
-    {
-
-        for (auto& citizen : citizens)
-        {
-            citizen.Update(grid);
-        }                             
-        
         BeginDrawing();
-        ClearBackground(emptyColor);
-
-        DrawPathWithGrid(grid, {}, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
-
-        // Dessin des citoyens
-        for (const auto& citizen : citizens)
-        {
-            citizen.Draw();
-        }                                   
-        
+        ClearBackground(RAYWHITE);
+        DrawGrid();
+        // Dessiner la balle comme un cercle
+        DrawCircle(ball.x * CELL_SIZE + CELL_SIZE / 2, ball.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, RED); // Utiliser DrawCircle
         EndDrawing();
     }
-    
-    UnloadTexture(blueShop);
-    UnloadTexture(redShop);
-    UnloadTexture(purpleShop);
-    UnloadTexture(blueHouse);
-    UnloadTexture(redHouse);
-    UnloadTexture(purpleHouse);
-    CloseWindow();
 
+    // Décharger les textures
+    UnloadTexture(texture1);
+    UnloadTexture(texture2);
+    
+    CloseWindow();
     return 0;
 }
