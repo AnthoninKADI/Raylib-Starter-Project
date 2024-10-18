@@ -169,9 +169,10 @@ Path AStar(Cell start, Cell end) {
 
     return path;
 }
+Cell predefinedDestination = {2, 8};
 
 int main(void) {
-    InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "Grid with Ball");
+    InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "City Sim");
     
     // Charger les textures
     texture1 = LoadTexture("resources/BlueShop1.png"); // 2
@@ -184,28 +185,10 @@ int main(void) {
     SetTargetFPS(60);
 
     Path path = {0};
-
+    end = predefinedDestination;
+    path = AStar(start, end);
+    
     while (!WindowShouldClose()) {
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            Vector2 mousePos = GetMousePosition();
-            int gridX = mousePos.x / CELL_SIZE;
-            int gridY = mousePos.y / CELL_SIZE;
-
-            if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
-                if (grid[gridY][gridX] == 1 || grid[gridY][gridX] == 2 || grid[gridY][gridX] == 3) {
-                    // Changer la destination uniquement si la balle a atteint la destination actuelle
-                    if (path.length == 0 || (ball.x == end.x && ball.y == end.y)) {
-                        start.x = ball.x;  // Mettre à jour le point de départ à la position actuelle de la balle
-                        start.y = ball.y;
-                    }
-                    end.x = gridX;
-                    end.y = gridY;
-                    path = AStar(start, end);
-                }
-            }
-        }
-
-        // Avancer la balle sur le chemin en fonction du timer
         if (path.length > 0) {
             moveTimer += GetFrameTime(); // Ajouter le temps écoulé à moveTimer
 
@@ -224,7 +207,7 @@ int main(void) {
         ClearBackground(RAYWHITE);
         DrawGrid();
         // Dessiner la balle comme un cercle
-        DrawCircle(ball.x * CELL_SIZE + CELL_SIZE / 2, ball.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, RED); // Utiliser DrawCircle
+        DrawCircle(ball.x * CELL_SIZE + CELL_SIZE / 2, ball.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, BLUE); // Utiliser DrawCircle
         EndDrawing();
     }
 
