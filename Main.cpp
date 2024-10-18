@@ -28,16 +28,16 @@ Cell end = {8, 1};   // Point d'arrivée
 
 // Représentation de la grille : 0 = Normal, 1 = Route, 2 = Texture1, 3 = Texture2
 int grid[GRID_SIZE][GRID_SIZE] = {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 3, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+    {0, 1, 0, 0, 1, 0, 0, 0, 1, 5},
+    {0, 1, 0, 4, 1, 0, 0, 0, 1, 0},
     {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
-    {0, 1, 0, 0, 1, 1, 1, 1, 1, 1},
-    {0, 1, 0, 0, 1, 0, 0, 0, 0, 0},
-    {0, 1, 0, 0, 1, 0, 0, 0, 0, 0},
-    {0, 1, 0, 0, 1, 1, 1, 1, 1, 0},
-    {0, 1, 0, 0, 0, 0, 1, 0, 0, 0},
-    {0, 1, 1, 1, 1, 1, 1, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+    {0, 1, 6, 0, 1, 0, 7, 0, 1, 0},
+    {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
+    {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+    {0, 0, 2, 0, 0, 0, 0, 0, 0, 0},
 };
 
 // Direction pour les mouvements (haut, bas, gauche, droite)
@@ -174,12 +174,12 @@ int main(void) {
     InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "Grid with Ball");
     
     // Charger les textures
-    texture1 = LoadTexture("resources/BlueShop.png"); // 2
-    texture2 = LoadTexture("resources/BlueHouse.png"); // 3
-    texture3 = LoadTexture("resources/RedShop.png"); // 4
-    texture4 = LoadTexture("resources/RedHouse.png"); // 5
-    texture5 = LoadTexture("resources/PurpleShop.png"); // 6 
-    texture6 = LoadTexture("resources/PurpleHouse.png"); // 7
+    texture1 = LoadTexture("resources/BlueShop1.png"); // 2
+    texture2 = LoadTexture("resources/BlueHouse1.png"); // 3
+    texture3 = LoadTexture("resources/RedShop1.png"); // 4
+    texture4 = LoadTexture("resources/RedHouse1.png"); // 5
+    texture5 = LoadTexture("resources/PurpleShop1.png"); // 6 
+    texture6 = LoadTexture("resources/PurpleHouse1.png"); // 7
 
     SetTargetFPS(60);
 
