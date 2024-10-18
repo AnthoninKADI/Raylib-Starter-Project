@@ -20,13 +20,15 @@ typedef struct {
 typedef struct {
     int x;
     int y;
+    Path path;  
 } Ball;
 
-Ball ball = {1, 1}; // Position initiale de la balle
-Cell start = {1, 1}; // Point de départ
-Cell end = {8, 1};   // Point d'arrivée
+Ball ball1 = {1, 1}; // Blue ball Start
+Cell end1 = {2, 8};  // Blue ball Finish
 
-// Représentation de la grille : 0 = Normal, 1 = Route, 2 = Texture1, 3 = Texture2
+Ball ball2 = {8, 2}; // Red ball Start
+Cell end2 = {4, 3};  // Red ball Finish
+
 int grid[GRID_SIZE][GRID_SIZE] = {
     {0, 3, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
@@ -34,32 +36,29 @@ int grid[GRID_SIZE][GRID_SIZE] = {
     {0, 1, 0, 4, 1, 0, 0, 0, 1, 0},
     {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
     {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
-    {0, 1, 6, 0, 1, 0, 7, 0, 1, 0},
+    {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
     {0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
     {0, 1, 1, 1, 1, 1, 1, 1, 1, 0},
     {0, 0, 2, 0, 0, 0, 0, 0, 0, 0},
 };
 
-// Direction pour les mouvements (haut, bas, gauche, droite)
 int directions[4][2] = {
-    {-1, 0}, // haut
-    {1, 0},  // bas
-    {0, -1}, // gauche
-    {0, 1}   // droite
+    {-1, 0}, 
+    {1, 0},  
+    {0, -1}, 
+    {0, 1}   
 };
 
-// Variable de vitesse de la balle
-float ballSpeed = 1.0f; // Vitesse de la balle
-float moveTimer = 0.0f; // Timer pour contrôler le mouvement
-float moveInterval = 0.1f; // Temps entre chaque mouvement (en secondes)
+// Balls
+float ballSpeed = 1.0f; 
+float moveTimer1 = 0.0f; 
+float moveTimer2 = 0.0f; 
+float moveInterval = 0.1f; 
 
-// Texture variables
-Texture2D texture1; // Texture pour 2
-Texture2D texture2; // Texture pour 3
-Texture2D texture3; // Texture pour 4
-Texture2D texture4; // Texture pour 5
-Texture2D texture5; // Texture pour 6
-Texture2D texture6; // Texture pour 7
+Texture2D texture1; // 2
+Texture2D texture2; // 3
+Texture2D texture3; // 4
+Texture2D texture4; // 5
 
 void DrawGrid() {
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -69,17 +68,13 @@ void DrawGrid() {
             } else if (grid[i][j] == 1) {
                 DrawRectangle(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE, BLACK);
             } else if (grid[i][j] == 2) {
-                DrawTexture(texture1, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 2
+                DrawTexture(texture1, j * CELL_SIZE, i * CELL_SIZE, WHITE); 
             } else if (grid[i][j] == 3) {
-                DrawTexture(texture2, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
-            }else if (grid[i][j] == 4) {
-                DrawTexture(texture3, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
-            }else if (grid[i][j] == 5) {
-                DrawTexture(texture4, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
-            }else if (grid[i][j] == 6) {
-                DrawTexture(texture5, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
-            }else if (grid[i][j] == 7) {
-                DrawTexture(texture6, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
+                DrawTexture(texture2, j * CELL_SIZE, i * CELL_SIZE, WHITE); 
+            } else if (grid[i][j] == 4) {
+                DrawTexture(texture3, j * CELL_SIZE, i * CELL_SIZE, WHITE); 
+            } else if (grid[i][j] == 5) {
+                DrawTexture(texture4, j * CELL_SIZE, i * CELL_SIZE, WHITE); 
             }
         }
     }
@@ -169,7 +164,6 @@ Path AStar(Cell start, Cell end) {
 
     return path;
 }
-Cell predefinedDestination = {2, 8};
 
 int main(void) {
     InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "City Sim");
@@ -179,41 +173,60 @@ int main(void) {
     texture2 = LoadTexture("resources/BlueHouse1.png"); // 3
     texture3 = LoadTexture("resources/RedShop1.png"); // 4
     texture4 = LoadTexture("resources/RedHouse1.png"); // 5
-    texture5 = LoadTexture("resources/PurpleShop1.png"); // 6 
-    texture6 = LoadTexture("resources/PurpleHouse1.png"); // 7
 
     SetTargetFPS(60);
-
-    Path path = {0};
-    end = predefinedDestination;
-    path = AStar(start, end);
+    
+    Cell start1 = {ball1.x, ball1.y}; 
+    Cell start2 = {ball2.x, ball2.y}; 
+    
+    ball1.path = AStar(start1, end1);
+    ball2.path = AStar(start2, end2);
     
     while (!WindowShouldClose()) {
-        if (path.length > 0) {
-            moveTimer += GetFrameTime(); // Ajouter le temps écoulé à moveTimer
+        // Ball Blue
+        if (ball1.path.length > 0) {
+            moveTimer1 += GetFrameTime(); 
 
-            if (moveTimer >= moveInterval) { // Vérifier si le temps écoulé dépasse l'intervalle
-                ball.x = path.cells[0].x;
-                ball.y = path.cells[0].y;
-                for (int i = 0; i < path.length - 1; i++) {
-                    path.cells[i] = path.cells[i + 1];
+            if (moveTimer1 >= moveInterval) { 
+                ball1.x = ball1.path.cells[0].x;
+                ball1.y = ball1.path.cells[0].y;
+                for (int i = 0; i < ball1.path.length - 1; i++) {
+                    ball1.path.cells[i] = ball1.path.cells[i + 1];
                 }
-                path.length--;
-                moveTimer = 0; // Réinitialiser le timer
+                ball1.path.length--;
+                moveTimer1 = 0; // Réinitialiser le timer
+            }
+        }
+
+        // Ball Red
+        if (ball2.path.length > 0) {
+            moveTimer2 += GetFrameTime(); 
+
+            if (moveTimer2 >= moveInterval) { 
+                ball2.x = ball2.path.cells[0].x;
+                ball2.y = ball2.path.cells[0].y;
+                for (int i = 0; i < ball2.path.length - 1; i++) {
+                    ball2.path.cells[i] = ball2.path.cells[i + 1];
+                }
+                ball2.path.length--;
+                moveTimer2 = 0; 
             }
         }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawGrid();
-        // Dessiner la balle comme un cercle
-        DrawCircle(ball.x * CELL_SIZE + CELL_SIZE / 2, ball.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, BLUE); // Utiliser DrawCircle
+        // Blue Ball
+        DrawCircle(ball1.x * CELL_SIZE + CELL_SIZE / 2, ball1.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, BLUE); 
+        // Red Ball
+        DrawCircle(ball2.x * CELL_SIZE + CELL_SIZE / 2, ball2.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 4, RED); 
         EndDrawing();
     }
-
-    // Décharger les textures
+    
     UnloadTexture(texture1);
     UnloadTexture(texture2);
+    UnloadTexture(texture3);
+    UnloadTexture(texture4);
     
     CloseWindow();
     return 0;
