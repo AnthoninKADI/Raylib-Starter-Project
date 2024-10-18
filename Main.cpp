@@ -295,9 +295,15 @@ int main()
     grid[12][10].terrain = Road;
     grid[13][10].terrain = Road;
 
-    Node* destination1 = &grid[15][7]; // 14 - 5 // 14 - 7 // 
-    Node* destination2 = &grid[2][0];  // 7 - 10 // 7 - 1 // 2 - 1 //
-    Node* destination3 = &grid[10][4]; // 1 - 5 // 10 - 5 // 
+    // Destination mais sans le A* avec point défini (Désolé Marie je n'arrive pas a implémenter le pathfinding)
+    std::vector<Node*> destinations1 = { &grid[14][5], &grid[14][7], &grid[15][7] };
+    std::vector<Node*> destinations2 = { &grid[7][10], &grid[7][1], &grid[2][1], &grid[2][0] };
+    std::vector<Node*> destinations3 = { &grid[1][5], &grid[10][5], &grid[10][4] };
+
+    // Destination pour base a*
+    // Node* destination1 = &grid[15][7]; 
+    // Node* destination2 = &grid[2][0];  
+    // Node* destination3 = &grid[10][4]; 
 
     grid[2][0].terrain = BlueShop; 
     grid[15][7].terrain = RedShop; 
@@ -307,9 +313,9 @@ int main()
     grid[2][7].terrain = PurpleHouse;
 
     std::vector<Citizen> citizens; //
-    citizens.emplace_back(3, 5, 7.0f, RED, destination1);   
-    citizens.emplace_back(9, 10, 7.0f, BLUE, destination2); 
-    citizens.emplace_back(1, 7, 7.0f, PINK, destination3);
+    citizens.emplace_back(3, 5, 7.0f, RED, destinations1);   
+    citizens.emplace_back(9, 10, 7.0f, BLUE, destinations2); 
+    citizens.emplace_back(1, 7, 7.0f, PINK, destinations3);
 
     while (!WindowShouldClose())
     {
@@ -323,8 +329,7 @@ int main()
         ClearBackground(emptyColor);
 
         DrawPathWithGrid(grid, {}, blueShop, redShop, purpleShop, blueHouse, redHouse, purpleHouse);
-
-        // Dessin des citoyens
+        
         for (const auto& citizen : citizens)
         {
             citizen.Draw();

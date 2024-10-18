@@ -5,7 +5,6 @@
 #include <vector>
 #include <cmath>
 
-// Définition de l'enum Terrain
 enum Terrain
 {
     Normal,
@@ -20,7 +19,6 @@ enum Terrain
     Road
 };
 
-// Définition de la structure Node
 struct Node
 {
     int x, y;
@@ -36,7 +34,6 @@ struct Node
     }
 };
 
-// Déclarations des fonctions
 float distance(const Node& node1, const Node& node2);
 float getTerrainCost(const Node& node);
 

@@ -1,6 +1,5 @@
 ﻿#include "Node.h"
 
-// Définitions des fonctions
 float distance(const Node& node1, const Node& node2)
 {
     return sqrt(pow(node1.x - node2.x, 2) + pow(node1.y - node2.y, 2));
