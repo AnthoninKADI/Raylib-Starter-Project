@@ -53,8 +53,13 @@ float ballSpeed = 1.0f; // Vitesse de la balle
 float moveTimer = 0.0f; // Timer pour contrôler le mouvement
 float moveInterval = 0.1f; // Temps entre chaque mouvement (en secondes)
 
-Texture2D texture1; // Texture pour le 2
-Texture2D texture2; // Texture pour le 3
+// Texture variables
+Texture2D texture1; // Texture pour 2
+Texture2D texture2; // Texture pour 3
+Texture2D texture3; // Texture pour 4
+Texture2D texture4; // Texture pour 5
+Texture2D texture5; // Texture pour 6
+Texture2D texture6; // Texture pour 7
 
 void DrawGrid() {
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -67,6 +72,14 @@ void DrawGrid() {
                 DrawTexture(texture1, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 2
             } else if (grid[i][j] == 3) {
                 DrawTexture(texture2, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
+            }else if (grid[i][j] == 4) {
+                DrawTexture(texture3, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
+            }else if (grid[i][j] == 5) {
+                DrawTexture(texture4, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
+            }else if (grid[i][j] == 6) {
+                DrawTexture(texture5, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
+            }else if (grid[i][j] == 7) {
+                DrawTexture(texture6, j * CELL_SIZE, i * CELL_SIZE, WHITE); // Affiche la texture pour 3
             }
         }
     }
@@ -161,8 +174,12 @@ int main(void) {
     InitWindow(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE, "Grid with Ball");
     
     // Charger les textures
-    texture1 = LoadTexture("path_to_texture1.png"); // Remplacez par le chemin de votre texture pour 2
-    texture2 = LoadTexture("path_to_texture2.png"); // Remplacez par le chemin de votre texture pour 3
+    texture1 = LoadTexture("resources/BlueShop.png"); // 2
+    texture2 = LoadTexture("resources/BlueHouse.png"); // 3
+    texture3 = LoadTexture("resources/RedShop.png"); // 4
+    texture4 = LoadTexture("resources/RedHouse.png"); // 5
+    texture5 = LoadTexture("resources/PurpleShop.png"); // 6 
+    texture6 = LoadTexture("resources/PurpleHouse.png"); // 7
 
     SetTargetFPS(60);
 
