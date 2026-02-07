@@ -10,12 +10,9 @@ void DrawCrosshair(int size, int thickness)
 {
     int cx = GetScreenWidth()/2;
     int cy = GetScreenHeight()/2;
-
-    // Outline
+    
     DrawRectangle(cx-size-1, cy-thickness/2-1, size*2+2, thickness+2, BLACK);
     DrawRectangle(cx-thickness/2-1, cy-size-1, thickness+2, size*2+2, BLACK);
-
-    // Main cross
     DrawRectangle(cx-size, cy-thickness/2, size*2, thickness, WHITE);
     DrawRectangle(cx-thickness/2, cy-size, thickness, size*2, WHITE);
 }
@@ -28,14 +25,14 @@ public:
 
     int grid[H][W] = {
         {1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,1},
-        {1,0,1,0,1,0,1,0,0,1},
-        {1,0,1,0,1,0,1,1,0,1},
-        {1,0,0,0,0,0,1,1,0,1},
-        {1,0,1,1,1,0,1,0,0,1},
-        {1,0,1,0,0,0,0,0,0,1},
-        {1,0,1,0,1,1,1,1,0,1},
-        {1,0,0,0,0,0,0,0,0,1},
+        {1,0,0,0,1,0,0,0,0,1},
+        {1,0,0,0,1,0,0,0,0,1},
+        {1,0,0,0,1,0,0,0,0,1},
+        {1,1,1,0,1,1,1,0,1,1},
+        {1,0,0,0,0,0,1,0,0,1},
+        {1,0,0,0,0,0,1,0,0,1},
+        {1,0,0,0,0,0,1,0,0,1},
+        {1,0,0,0,1,0,0,0,0,1},
         {1,1,1,1,1,1,1,1,1,1}
     };
 
