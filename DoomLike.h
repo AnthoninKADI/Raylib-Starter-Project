@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 
-// ================= CROSSHAIR =================
 void DrawCrosshair(int size, int thickness)
 {
     int cx = GetScreenWidth()/2;
@@ -21,7 +20,6 @@ void DrawCrosshair(int size, int thickness)
     DrawRectangle(cx-thickness/2, cy-size, thickness, size*2, WHITE);
 }
 
-// ================= LEVEL =================
 class Level {
 public:
     static constexpr int W = 10;
@@ -53,7 +51,6 @@ public:
     }
 };
 
-// ================= PLAYER =================
 struct Impact {
     Vector3 pos;
     float life;
@@ -67,13 +64,11 @@ public:
     float yaw=0, pitch=0;
     float speed=3.0f, radius=0.3f;
 
-    // Head bob
     float bobPhase=0;
     float bobSpeed=10.0f;
     float bobY=0.05f;
     float bobX=0.03f;
-
-    // Shooting
+    
     float recoil=0;
 
     Level* level;
@@ -86,7 +81,6 @@ public:
         cam.projection=CAMERA_PERSPECTIVE;
     }
 
-    // ===== COLLISION =====
     bool IsWall(float x,float z) const
     {
         float offset = radius + 0.01f;
@@ -103,11 +97,9 @@ public:
             }
         return false;
     }
-
-    // ===== UPDATE =====
+    
     void Update(float dt)
     {
-        // Mouse
         Vector2 m=GetMouseDelta();
         yaw-=m.x*0.003f;
         pitch-=m.y*0.003f;
@@ -115,12 +107,11 @@ public:
 
         pitch+=recoil;
         recoil=Lerp(recoil,0,dt*15);
-
-        // Movement
+        
         Vector3 f={sinf(yaw),0,cosf(yaw)};
         Vector3 r={-f.z,0,f.x};
-
         Vector3 mv={0};
+        
         if(IsKeyDown(KEY_W)) mv=Vector3Add(mv,f);
         if(IsKeyDown(KEY_S)) mv=Vector3Subtract(mv,f);
         if(IsKeyDown(KEY_A)) mv=Vector3Subtract(mv,r);
@@ -135,15 +126,13 @@ public:
         if(!IsWall(pos.x+vel.x,pos.z)) np.x+=vel.x;
         if(!IsWall(np.x,pos.z+vel.z)) np.z+=vel.z;
         pos=np;
-
-        // Head bob
+        
         if(moving) bobPhase+=dt*bobSpeed;
         else bobPhase=0;
 
         float bx=sinf(bobPhase*0.5f)*bobX;
         float by=sinf(bobPhase)*bobY;
-
-        // Camera
+        
         cam.position={pos.x+bx,1.0f+by,pos.z};
         Vector3 dir={
             sinf(yaw)*cosf(pitch),
@@ -151,18 +140,15 @@ public:
             cosf(yaw)*cosf(pitch)
         };
         cam.target=Vector3Add(cam.position,dir);
-
-        // Shoot
+        
         if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             Shoot();
-
-        // Update impacts
+        
         for(auto&i:impacts) i.life-=dt;
         impacts.erase(std::remove_if(impacts.begin(),impacts.end(),
             [](auto&i){return i.life<=0;}),impacts.end());
     }
-
-    // ===== SHOOT =====
+    
     void Shoot()
     {
         Vector3 dir=Vector3Normalize(Vector3Subtract(cam.target,cam.position));
@@ -186,7 +172,6 @@ public:
         }
     }
 
-    // ===== DRAW VIEWMODEL FPS =====
     void DrawGun() const
     {
         Color HAND={220,190,160,255};
@@ -195,20 +180,15 @@ public:
 
         rlPushMatrix();
 
-        // Place gun devant la caméra (main droite)
         rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
-
-        // Rotation pour suivre la caméra
         rlRotatef(RAD2DEG*yaw, 0,1,0);
         rlRotatef(RAD2DEG*-pitch, 1,0,0);
-
-        // Offset local du gun (main droite)
         rlTranslatef(-0.45f, -0.25f, 0.7f);
 
-        // ==== MAIN ====
+
         DrawCube({0,-0.05f,0},0.15f,0.2f,0.2f,HAND);
 
-        // ==== PISTOLET LOW-POLY ====
+
         DrawCube({0,-0.15f,0.15f},0.1f,0.35f,0.15f,GUN);
         DrawCubeWires({0,-0.15f,0.15f},0.1f,0.35f,0.15f,OUTLINE);
 
@@ -220,8 +200,7 @@ public:
 
         rlPopMatrix();
     }
-
-    // ===== DRAW IMPACTS =====
+    
     void DrawImpacts() const
     {
         for(auto&i:impacts)
@@ -229,7 +208,6 @@ public:
     }
 };
 
-// ================= GAME =================
 class Game {
 public:
     Level level;
