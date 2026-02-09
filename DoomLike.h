@@ -6,9 +6,6 @@
 #include <algorithm>
 #include <cmath>
 
-// ======================================================
-// CROSSHAIR
-// ======================================================
 void DrawCrosshair(int size, int thickness)
 {
     int cx = GetScreenWidth()/2;
@@ -17,9 +14,6 @@ void DrawCrosshair(int size, int thickness)
     DrawRectangle(cx-thickness/2, cy-size, thickness, size*2, WHITE);
 }
 
-// ======================================================
-// LEVEL
-// ======================================================
 class Level {
 public:
     static constexpr int W = 10;
@@ -68,12 +62,15 @@ public:
         {
             Vector3 p = {x*CELL + CELL/2, 0, z*CELL + CELL/2};
 
+            // floor
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = floorTex;
             DrawModelEx(cube, {p.x,0,p.z},{0,1,0},0,{CELL,0.02f,CELL},WHITE);
 
+            // roof
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = roofTex;
             DrawModelEx(cube, {p.x,2,p.z},{0,1,0},0,{CELL,0.02f,CELL},WHITE);
 
+            // walls
             if(grid[z][x])
             {
                 cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = wallTex;
@@ -83,17 +80,19 @@ public:
     }
 };
 
-// ======================================================
-// IMPACT
-// ======================================================
 struct Impact {
     Vector3 pos;
     float life;
 };
 
-// ======================================================
-// PLAYER
-// ======================================================
+struct Projectile {
+    Vector3 pos;
+    Vector3 dir;
+    float life;
+    float speed;
+    float radius = 0.1f;
+};
+
 class Player {
 public:
     Camera3D cam;
@@ -102,8 +101,7 @@ public:
     float speed=3.0f;
     float radius=0.3f;
     float hp=100;
-
-    // view bobbing
+    float damageCooldown = 0;   
     float bobPhase=0;
     float bobSpeed=10;
     float bobX=0.03f;
@@ -126,8 +124,18 @@ public:
                level->IsWall(x-r,z+r)||level->IsWall(x+r,z+r);
     }
 
+    void TakeDamage(float dmg)
+    {
+        if(damageCooldown <= 0) {
+            hp -= dmg;
+            damageCooldown = 0.5f; 
+        }
+    }
+
     void Update(float dt)
     {
+        if(damageCooldown > 0) damageCooldown -= dt;
+
         Vector2 m=GetMouseDelta();
         yaw-=m.x*0.003f;
         pitch-=m.y*0.003f;
@@ -149,10 +157,9 @@ public:
 
         if(!Collides(pos.x+step.x,pos.z)) pos.x+=step.x;
         if(!Collides(pos.x,pos.z+step.z)) pos.z+=step.z;
-
         if(moving) bobPhase+=dt*bobSpeed;
         else bobPhase=0;
-
+        
         float bx=sinf(bobPhase*0.5f)*bobX;
         float by=sinf(bobPhase)*bobY;
 
@@ -189,30 +196,18 @@ public:
 
     void DrawGun()
     {
-        // Taille du gun
         Vector3 gunSize = {0.15f, 0.2f, 0.4f};
-
-        // Offset fixe par rapport à la caméra (pas de bobbing)
-        Vector3 gunOffset = {0.0f, -0.25f, 0.6f}; // bas et légèrement devant
+        Vector3 gunOffset = {0.0f, -0.25f, 0.6f}; 
 
         rlPushMatrix();
-
-        // On positionne le gun exactement sur la caméra
         rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
-
-        // Rotation de la caméra pour que le gun suive le regard
         rlRotatef(RAD2DEG * yaw, 0, 1, 0);
         rlRotatef(RAD2DEG * -pitch, 1, 0, 0);
-
-        // Décalage du gun devant la caméra (sans bobbing)
         rlTranslatef(gunOffset.x, gunOffset.y, gunOffset.z);
-
-        // Dessiner le gun
-        DrawCube({0, 0, 0}, gunSize.x, gunSize.y, gunSize.z, DARKGRAY);
-
+        DrawCube({0,0,0}, gunSize.x, gunSize.y, gunSize.z, DARKGRAY);
         rlPopMatrix();
     }
-    
+
     void DrawImpacts()
     {
         for(auto&i:impacts)
@@ -220,14 +215,55 @@ public:
     }
 };
 
+class Turret {
+public:
+    Vector3 pos;
+    float radius = 0.3f;
+    float fireCooldown = 0;
+    float fireRate = 2.0f; 
+    float projSpeed = 6.0f;
 
-// ======================================================
-// GAME
-// ======================================================
+    Turret(Vector3 p):pos(p){}
+
+    void Update(float dt, Player& player, std::vector<Projectile>& projectiles, Level& level)
+    {
+        if(fireCooldown>0) fireCooldown-=dt;
+
+        if(fireCooldown<=0)
+        {
+            Vector3 dir = Vector3Normalize(Vector3Subtract(player.pos, pos));
+            projectiles.push_back({pos,dir,3.0f,projSpeed,0.1f});
+            fireCooldown = fireRate;
+        }
+        
+        for(auto& p:projectiles)
+        {
+            Vector3 np = Vector3Add(p.pos, Vector3Scale(p.dir,p.speed*dt));
+            if(level.IsWall(np.x,np.z) || np.y<=0 || np.y>=2)
+            {
+                p.life=0;
+            }
+            else
+            {
+                p.pos=np;
+            }
+        }
+        projectiles.erase(std::remove_if(projectiles.begin(),projectiles.end(),
+            [](auto&p){return p.life<=0;}),projectiles.end());
+    }
+
+    void Draw() const
+    {
+        DrawCube(pos,0.3f,1.5f,0.5f,BLUE);
+    }
+};
+
 class Game {
 public:
     Level level;
     Player player{&level};
+    Turret turret{{3.5f,0.25f,15.5f}};
+    std::vector<Projectile> projectiles;
 
     void Run()
     {
@@ -240,6 +276,16 @@ public:
         {
             float dt=GetFrameTime();
             player.Update(dt);
+            
+            turret.Update(dt,player,projectiles,level);
+            
+            for(auto& p : projectiles)
+            {
+                if(Vector3Distance(player.pos, p.pos) < player.radius + p.radius){
+                    player.TakeDamage(10);
+                    p.life = 0;
+                }
+            }
 
             if(player.hp<=0){
                 player.hp=100;
@@ -253,6 +299,10 @@ public:
                 level.Draw();
                 player.DrawImpacts();
                 player.DrawGun();
+                turret.Draw();
+            
+                for(auto& p : projectiles)
+                    DrawSphere(p.pos,p.radius,YELLOW);
             EndMode3D();
 
             DrawFPS(10,10);
