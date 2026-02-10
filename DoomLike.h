@@ -103,6 +103,7 @@ public:
     float fireCooldown = 0;
     float fireRate = 2.0f;
     float projSpeed = 6.0f;
+
     int hp = 30;
     float hitFlash = 0;
 
@@ -124,8 +125,10 @@ public:
 
         if(IsAlive() && fireCooldown <= 0)
         {
-            Vector3 dir = Vector3Normalize(Vector3Subtract(playerPos, pos));
-            projectiles.push_back({pos, dir, 3.0f, projSpeed});
+            Vector3 targetDir = { playerPos.x - pos.x, 0, playerPos.z - pos.z };
+            Vector3 dir = Vector3Normalize(targetDir);
+
+            projectiles.push_back({ pos, dir, 3.0f, projSpeed });
             fireCooldown = fireRate;
         }
 
@@ -160,6 +163,7 @@ public:
     float radius=0.3f;
     float hp=100;
     float damageCooldown = 0;
+
     float bobPhase=0;
     float bobSpeed=10;
     float bobX=0.03f;
@@ -180,10 +184,13 @@ public:
     Vector3 GetGunTipPos() const
     {
         Vector3 posCam = cam.position;
+
         Vector3 forward = { sinf(yaw)*cosf(pitch), sinf(pitch), cosf(yaw)*cosf(pitch) };
         Vector3 right   = { -forward.z, 0, forward.x };
         Vector3 up      = {0,1,0};
+
         Vector3 gunOffset = {0.0f, -0.25f, 0.6f};
+
         Vector3 worldOffset = Vector3Add(
             Vector3Scale(right, gunOffset.x),
             Vector3Add(
@@ -263,11 +270,11 @@ public:
     void Shoot()
     {
         Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target, cam.position));
-        Vector3 gunTip = GetGunTipPos(); 
+        Vector3 gunTip = GetGunTipPos();
 
         for(float d=0; d<50; d+=0.02f)
         {
-            Vector3 p = Vector3Add(cam.position,Vector3Scale(dir,d)); 
+            Vector3 p = Vector3Add(cam.position,Vector3Scale(dir,d));
 
             if(turret->IsAlive())
             {
@@ -277,7 +284,7 @@ public:
                 {
                     turret->TakeDamage(10);
                     impacts.push_back({p,0.25f});
-                    lasers.push_back({gunTip,p,0.08f}); 
+                    lasers.push_back({gunTip,p,0.08f});
                     return;
                 }
             }
