@@ -62,15 +62,12 @@ public:
         {
             Vector3 p = {x*CELL + CELL/2, 0, z*CELL + CELL/2};
 
-            // floor
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = floorTex;
             DrawModelEx(cube, {p.x,0,p.z},{0,1,0},0,{CELL,0.02f,CELL},WHITE);
 
-            // roof
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = roofTex;
             DrawModelEx(cube, {p.x,2,p.z},{0,1,0},0,{CELL,0.02f,CELL},WHITE);
 
-            // walls
             if(grid[z][x])
             {
                 cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = wallTex;
@@ -93,6 +90,63 @@ struct Projectile {
     float radius = 0.1f;
 };
 
+class Turret {
+public:
+    Vector3 pos;
+    float radius = 0.35f;
+
+    float fireCooldown = 0;
+    float fireRate = 2.0f;
+    float projSpeed = 6.0f;
+
+    int hp = 30;
+    float hitFlash = 0;
+
+    Turret(Vector3 p):pos(p){}
+
+    bool IsAlive() const { return hp > 0; }
+
+    void TakeDamage(int dmg)
+    {
+        hp -= dmg;
+        hitFlash = 0.1f;
+    }
+
+    void Update(float dt, Vector3 playerPos,
+                std::vector<Projectile>& projectiles, Level& level)
+    {
+        if(hitFlash > 0) hitFlash -= dt;
+        if(fireCooldown > 0) fireCooldown -= dt;
+        
+        if(IsAlive() && fireCooldown <= 0)
+        {
+            Vector3 dir = Vector3Normalize(Vector3Subtract(playerPos, pos));
+            projectiles.push_back({pos, dir, 3.0f, projSpeed});
+            fireCooldown = fireRate;
+        }
+        
+        for(auto& p:projectiles)
+        {
+            Vector3 np = Vector3Add(p.pos, Vector3Scale(p.dir,p.speed*dt));
+            if(level.IsWall(np.x,np.z) || np.y<=0 || np.y>=2)
+                p.life = 0;
+            else
+                p.pos = np;
+
+            p.life -= dt;
+        }
+
+        projectiles.erase(std::remove_if(projectiles.begin(),projectiles.end(),
+            [](auto&p){return p.life<=0;}),projectiles.end());
+    }
+
+    void Draw() const
+    {
+        if(!IsAlive()) return;
+        DrawCube(pos,0.3f,1.5f,0.5f, hitFlash>0 ? ORANGE : BLUE);
+    }
+};
+
 class Player {
 public:
     Camera3D cam;
@@ -101,16 +155,18 @@ public:
     float speed=3.0f;
     float radius=0.3f;
     float hp=100;
-    float damageCooldown = 0;   
+    float damageCooldown = 0;
+
     float bobPhase=0;
     float bobSpeed=10;
     float bobX=0.03f;
     float bobY=0.05f;
 
     Level* level;
+    Turret* turret;
     std::vector<Impact> impacts;
 
-    Player(Level* lvl):level(lvl)
+    Player(Level* l, Turret* t):level(l),turret(t)
     {
         cam.up={0,1,0};
         cam.fovy=60;
@@ -126,15 +182,15 @@ public:
 
     void TakeDamage(float dmg)
     {
-        if(damageCooldown <= 0) {
-            hp -= dmg;
-            damageCooldown = 0.5f; 
+        if(damageCooldown<=0){
+            hp-=dmg;
+            damageCooldown=0.5f;
         }
     }
 
     void Update(float dt)
     {
-        if(damageCooldown > 0) damageCooldown -= dt;
+        if(damageCooldown>0) damageCooldown-=dt;
 
         Vector2 m=GetMouseDelta();
         yaw-=m.x*0.003f;
@@ -150,16 +206,16 @@ public:
         if(IsKeyDown(KEY_A)) mv=Vector3Subtract(mv,r);
         if(IsKeyDown(KEY_D)) mv=Vector3Add(mv,r);
 
-        bool moving = Vector3Length(mv)>0.01f;
+        bool moving=Vector3Length(mv)>0.01f;
         if(moving) mv=Vector3Normalize(mv);
 
         Vector3 step=Vector3Scale(mv,speed*dt);
-
         if(!Collides(pos.x+step.x,pos.z)) pos.x+=step.x;
         if(!Collides(pos.x,pos.z+step.z)) pos.z+=step.z;
+
         if(moving) bobPhase+=dt*bobSpeed;
         else bobPhase=0;
-        
+
         float bx=sinf(bobPhase*0.5f)*bobX;
         float by=sinf(bobPhase)*bobY;
 
@@ -180,16 +236,28 @@ public:
 
     void Shoot()
     {
-        Vector3 dir=Vector3Normalize(Vector3Subtract(cam.target,cam.position));
+        Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target,cam.position));
 
-        for(float d=0; d<50; d+=0.05f)
+        for(float d=0; d<50; d+=0.02f)
         {
-            Vector3 p=Vector3Add(cam.position,Vector3Scale(dir,d));
+            Vector3 p = Vector3Add(cam.position,Vector3Scale(dir,d));
+
+            if(turret->IsAlive())
+            {
+                float dx=p.x-turret->pos.x;
+                float dz=p.z-turret->pos.z;
+                if(dx*dx+dz*dz < turret->radius*turret->radius)
+                {
+                    turret->TakeDamage(10);
+                    impacts.push_back({p,0.25f});
+                    return;
+                }
+            }
 
             if(p.y<=0 || p.y>=2 || level->IsWall(p.x,p.z))
             {
                 impacts.push_back({p,0.25f});
-                break;
+                return;
             }
         }
     }
@@ -197,7 +265,7 @@ public:
     void DrawGun()
     {
         Vector3 gunSize = {0.15f, 0.2f, 0.4f};
-        Vector3 gunOffset = {0.0f, -0.25f, 0.6f}; 
+        Vector3 gunOffset = {0.0f, -0.25f, 0.6f};
 
         rlPushMatrix();
         rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
@@ -215,59 +283,16 @@ public:
     }
 };
 
-class Turret {
-public:
-    Vector3 pos;
-    float radius = 0.3f;
-    float fireCooldown = 0;
-    float fireRate = 2.0f; 
-    float projSpeed = 6.0f;
-
-    Turret(Vector3 p):pos(p){}
-
-    void Update(float dt, Player& player, std::vector<Projectile>& projectiles, Level& level)
-    {
-        if(fireCooldown>0) fireCooldown-=dt;
-
-        if(fireCooldown<=0)
-        {
-            Vector3 dir = Vector3Normalize(Vector3Subtract(player.pos, pos));
-            projectiles.push_back({pos,dir,3.0f,projSpeed,0.1f});
-            fireCooldown = fireRate;
-        }
-        
-        for(auto& p:projectiles)
-        {
-            Vector3 np = Vector3Add(p.pos, Vector3Scale(p.dir,p.speed*dt));
-            if(level.IsWall(np.x,np.z) || np.y<=0 || np.y>=2)
-            {
-                p.life=0;
-            }
-            else
-            {
-                p.pos=np;
-            }
-        }
-        projectiles.erase(std::remove_if(projectiles.begin(),projectiles.end(),
-            [](auto&p){return p.life<=0;}),projectiles.end());
-    }
-
-    void Draw() const
-    {
-        DrawCube(pos,0.3f,1.5f,0.5f,BLUE);
-    }
-};
-
 class Game {
 public:
     Level level;
-    Player player{&level};
     Turret turret{{3.5f,0.25f,15.5f}};
+    Player player{&level,&turret};
     std::vector<Projectile> projectiles;
 
     void Run()
     {
-        InitWindow(1280,720,"DoomLike 5yProject");
+        InitWindow(1280,720,"DoomLike");
         DisableCursor();
         SetTargetFPS(60);
         level.Load();
@@ -276,20 +301,16 @@ public:
         {
             float dt=GetFrameTime();
             player.Update(dt);
-            
-            turret.Update(dt,player,projectiles,level);
-            
-            for(auto& p : projectiles)
-            {
-                if(Vector3Distance(player.pos, p.pos) < player.radius + p.radius){
-                    player.TakeDamage(10);
-                    p.life = 0;
-                }
-            }
 
-            if(player.hp<=0){
-                player.hp=100;
-                player.pos={2.5f,0,2.5f};
+            turret.Update(dt, player.pos, projectiles, level);
+
+            for(auto& p:projectiles)
+            {
+                if(Vector3Distance(player.pos,p.pos) < player.radius+p.radius)
+                {
+                    player.TakeDamage(10);
+                    p.life=0;
+                }
             }
 
             BeginDrawing();
@@ -297,11 +318,10 @@ public:
 
             BeginMode3D(player.cam);
                 level.Draw();
+                turret.Draw();
                 player.DrawImpacts();
                 player.DrawGun();
-                turret.Draw();
-            
-                for(auto& p : projectiles)
+                for(auto&p:projectiles)
                     DrawSphere(p.pos,p.radius,YELLOW);
             EndMode3D();
 
