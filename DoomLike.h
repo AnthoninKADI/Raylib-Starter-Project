@@ -82,6 +82,12 @@ struct Impact {
     float life;
 };
 
+struct Laser {
+    Vector3 start;
+    Vector3 end;
+    float life;
+};
+
 struct Projectile {
     Vector3 pos;
     Vector3 dir;
@@ -94,11 +100,9 @@ class Turret {
 public:
     Vector3 pos;
     float radius = 0.35f;
-
     float fireCooldown = 0;
     float fireRate = 2.0f;
     float projSpeed = 6.0f;
-
     int hp = 30;
     float hitFlash = 0;
 
@@ -117,14 +121,14 @@ public:
     {
         if(hitFlash > 0) hitFlash -= dt;
         if(fireCooldown > 0) fireCooldown -= dt;
-        
+
         if(IsAlive() && fireCooldown <= 0)
         {
             Vector3 dir = Vector3Normalize(Vector3Subtract(playerPos, pos));
             projectiles.push_back({pos, dir, 3.0f, projSpeed});
             fireCooldown = fireRate;
         }
-        
+
         for(auto& p:projectiles)
         {
             Vector3 np = Vector3Add(p.pos, Vector3Scale(p.dir,p.speed*dt));
@@ -156,7 +160,6 @@ public:
     float radius=0.3f;
     float hp=100;
     float damageCooldown = 0;
-
     float bobPhase=0;
     float bobSpeed=10;
     float bobX=0.03f;
@@ -165,12 +168,31 @@ public:
     Level* level;
     Turret* turret;
     std::vector<Impact> impacts;
+    std::vector<Laser> lasers;
 
     Player(Level* l, Turret* t):level(l),turret(t)
     {
         cam.up={0,1,0};
         cam.fovy=60;
         cam.projection=CAMERA_PERSPECTIVE;
+    }
+
+    Vector3 GetGunTipPos() const
+    {
+        Vector3 posCam = cam.position;
+        Vector3 forward = { sinf(yaw)*cosf(pitch), sinf(pitch), cosf(yaw)*cosf(pitch) };
+        Vector3 right   = { -forward.z, 0, forward.x };
+        Vector3 up      = {0,1,0};
+        Vector3 gunOffset = {0.0f, -0.25f, 0.6f};
+        Vector3 worldOffset = Vector3Add(
+            Vector3Scale(right, gunOffset.x),
+            Vector3Add(
+                Vector3Scale(up, gunOffset.y),
+                Vector3Scale(forward, gunOffset.z)
+            )
+        );
+
+        return Vector3Add(posCam, worldOffset);
     }
 
     bool Collides(float x, float z) const
@@ -232,15 +254,20 @@ public:
         for(auto&i:impacts) i.life-=dt;
         impacts.erase(std::remove_if(impacts.begin(),impacts.end(),
             [](auto&i){return i.life<=0;}),impacts.end());
+
+        for(auto& l:lasers) l.life-=dt;
+        lasers.erase(std::remove_if(lasers.begin(),lasers.end(),
+            [](auto& l){return l.life<=0;}),lasers.end());
     }
 
     void Shoot()
     {
-        Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target,cam.position));
+        Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target, cam.position));
+        Vector3 gunTip = GetGunTipPos(); 
 
         for(float d=0; d<50; d+=0.02f)
         {
-            Vector3 p = Vector3Add(cam.position,Vector3Scale(dir,d));
+            Vector3 p = Vector3Add(cam.position,Vector3Scale(dir,d)); 
 
             if(turret->IsAlive())
             {
@@ -250,6 +277,7 @@ public:
                 {
                     turret->TakeDamage(10);
                     impacts.push_back({p,0.25f});
+                    lasers.push_back({gunTip,p,0.08f}); 
                     return;
                 }
             }
@@ -257,6 +285,7 @@ public:
             if(p.y<=0 || p.y>=2 || level->IsWall(p.x,p.z))
             {
                 impacts.push_back({p,0.25f});
+                lasers.push_back({gunTip,p,0.08f});
                 return;
             }
         }
@@ -264,15 +293,15 @@ public:
 
     void DrawGun()
     {
-        Vector3 gunSize = {0.15f, 0.2f, 0.4f};
-        Vector3 gunOffset = {0.0f, -0.25f, 0.6f};
+        Vector3 gunSize = {0.15f,0.2f,0.4f};
+        Vector3 gunOffset = {0,-0.25f,0.6f};
 
         rlPushMatrix();
         rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
-        rlRotatef(RAD2DEG * yaw, 0, 1, 0);
-        rlRotatef(RAD2DEG * -pitch, 1, 0, 0);
-        rlTranslatef(gunOffset.x, gunOffset.y, gunOffset.z);
-        DrawCube({0,0,0}, gunSize.x, gunSize.y, gunSize.z, DARKGRAY);
+        rlRotatef(RAD2DEG*yaw,0,1,0);
+        rlRotatef(RAD2DEG*-pitch,1,0,0);
+        rlTranslatef(gunOffset.x,gunOffset.y,gunOffset.z);
+        DrawCube({0,0,0},gunSize.x,gunSize.y,gunSize.z,DARKGRAY);
         rlPopMatrix();
     }
 
@@ -280,6 +309,12 @@ public:
     {
         for(auto&i:impacts)
             DrawSphere(i.pos,0.08f,RED);
+    }
+
+    void DrawLasers()
+    {
+        for(auto& l:lasers)
+            DrawCylinderEx(l.start,l.end,0.03f,0.03f,6,Color{0,255,255,200});
     }
 };
 
@@ -301,12 +336,11 @@ public:
         {
             float dt=GetFrameTime();
             player.Update(dt);
-
-            turret.Update(dt, player.pos, projectiles, level);
+            turret.Update(dt,player.pos,projectiles,level);
 
             for(auto& p:projectiles)
             {
-                if(Vector3Distance(player.pos,p.pos) < player.radius+p.radius)
+                if(Vector3Distance(player.pos,p.pos)<player.radius+p.radius)
                 {
                     player.TakeDamage(10);
                     p.life=0;
@@ -319,6 +353,7 @@ public:
             BeginMode3D(player.cam);
                 level.Draw();
                 turret.Draw();
+                player.DrawLasers();
                 player.DrawImpacts();
                 player.DrawGun();
                 for(auto&p:projectiles)
