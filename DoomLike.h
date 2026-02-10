@@ -267,7 +267,7 @@ public:
 
     void Run()
     {
-        InitWindow(1280,720,"DoomLike FPS");
+        InitWindow(1280,720,"DoomLike 5yProject");
         DisableCursor();
         SetTargetFPS(60);
         level.Load();
