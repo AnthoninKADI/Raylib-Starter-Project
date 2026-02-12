@@ -92,9 +92,9 @@ public:
     Turret(Vector3 p):pos(p){}
 
     bool IsAlive()const{return hp>0;}
-    void TakeDamage(int dmg){hp-=dmg; hitFlash=0.1f;}
+    void TakeDamage(int dmg){hp-=dmg;hitFlash=0.1f;}
 
-    void Update(float dt, Vector3 playerPos, std::vector<Projectile>& projectiles, Level& level)
+    void Update(float dt,Vector3 playerPos,std::vector<Projectile>& projectiles,Level& level)
     {
         if(hitFlash>0) hitFlash-=dt;
         if(fireCooldown>0) fireCooldown-=dt;
@@ -163,7 +163,7 @@ public:
     int hp=100;
     int maxHp=100;
 
-    Player(Level*l, std::vector<Turret*> ts):level(l), turrets(ts)
+    Player(Level*l,std::vector<Turret*>& turs):level(l),turrets(turs)
     {
         cam.up={0,1,0};
         cam.fovy=60;
@@ -265,17 +265,19 @@ public:
         {
             Vector3 p = Vector3Add(start, Vector3Scale(dir, d));
 
-            for(auto*turret: turrets)
+            for(auto* t : turrets)
             {
-                if(!turret->IsAlive()) continue;
-                float dx = p.x - turret->pos.x;
-                float dz = p.z - turret->pos.z;
-                if(dx*dx + dz*dz < turret->radius*turret->radius)
+                if(t->IsAlive())
                 {
-                    turret->TakeDamage(10);
-                    impacts.push_back({p, 0.25f});
-                    lasers.push_back({start, p, 0.08f});
-                    return;
+                    float dx = p.x - t->pos.x;
+                    float dz = p.z - t->pos.z;
+                    if(dx*dx + dz*dz < t->radius * t->radius)
+                    {
+                        t->TakeDamage(10);
+                        impacts.push_back({p, 0.25f});
+                        lasers.push_back({start, p, 0.08f});
+                        return;
+                    }
                 }
             }
 
@@ -286,8 +288,21 @@ public:
                 return;
             }
 
-            if(p.y <= floorY){p.y=floorY; impacts.push_back({p,0.25f}); lasers.push_back({start,p,0.08f}); return;}
-            if(p.y >= ceilingY){p.y=ceilingY; impacts.push_back({p,0.25f}); lasers.push_back({start,p,0.08f}); return;}
+            if(p.y <= floorY)
+            {
+                p.y = floorY;
+                impacts.push_back({p, 0.25f});
+                lasers.push_back({start, p, 0.08f});
+                return;
+            }
+
+            if(p.y >= ceilingY)
+            {
+                p.y = ceilingY;
+                impacts.push_back({p, 0.25f});
+                lasers.push_back({start, p, 0.08f});
+                return;
+            }
         }
     }
 
@@ -309,14 +324,20 @@ public:
 
     void DrawHpBar()
     {
-        int barW = 200;
-        int barH = 20;
+        int w = 200;
+        int h = 20;
         int x = 20;
         int y = GetScreenHeight()-40;
-        DrawRectangle(x-2,y-2,barW+4,barH+4,BLACK);
-        float ratio = (float)hp / (float)maxHp;
-        DrawRectangle(x,y,barW*ratio,barH,RED);
+
+        DrawRectangle(x-2,y-2,w+4,h+4,BLACK);
+        DrawRectangle(x,y,w*(hp/(float)maxHp),h,RED);
     }
+};
+
+struct HealthPack {
+    Vector3 pos;
+    float radius = 0.3f;
+    bool active = true;
 };
 
 class Game {
@@ -330,6 +351,11 @@ public:
     std::vector<Turret*> turretPtrs;
     Player player{&level, turretPtrs};
     std::vector<Projectile> projectiles;
+
+    std::vector<HealthPack> healthPacks = {
+        {{3.5f,0.25f,3.5f}},
+        {{6.5f,0.25f,10.5f}}
+    };
 
     Game()
     {
@@ -350,7 +376,30 @@ public:
 
         for(auto& t : turrets) { t.hp = 30; t.fireCooldown = 0; }
 
+        for(auto& pack : healthPacks) pack.active = true;
+
         projectiles.clear();
+    }
+
+    void CheckHealthPacks()
+    {
+        for(auto& pack : healthPacks)
+        {
+            if(!pack.active) continue;
+            float dist = Vector3Distance(player.pos, pack.pos);
+            if(dist < player.radius + pack.radius)
+            {
+                player.hp += 30;
+                if(player.hp > player.maxHp) player.hp = player.maxHp;
+                pack.active = false;
+            }
+        }
+    }
+
+    void DrawHealthPacks()
+    {
+        for(auto& pack : healthPacks)
+            if(pack.active) DrawCube(pack.pos,0.4f,0.4f,0.4f,GREEN);
     }
 
     void DrawMinimap()
@@ -392,6 +441,14 @@ public:
                 int tz = startY + t.pos.z * scale;
                 DrawCircle(tx, tz, 6, RED);
             }
+
+        for(auto& pack : healthPacks)
+            if(pack.active)
+            {
+                int hx = startX + pack.pos.x * scale;
+                int hz = startY + pack.pos.z * scale;
+                DrawCircle(hx, hz, 5, GREEN);
+            }
     }
 
     void Run()
@@ -413,6 +470,8 @@ public:
                 if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius)
                     { player.hp -= 10; p.life = 0; }
 
+            CheckHealthPacks();
+
             if(player.hp <= 0) Reset();
 
             BeginDrawing();
@@ -421,6 +480,7 @@ public:
             BeginMode3D(player.cam);
                 level.Draw();
                 for(auto& t: turrets) t.Draw();
+                DrawHealthPacks();
                 player.DrawLasers();
                 player.DrawImpacts();
                 player.DrawGun();
@@ -437,3 +497,4 @@ public:
         CloseWindow();
     }
 };
+
