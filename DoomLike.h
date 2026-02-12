@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <cmath>
 
-// ------------------------------------------------------------
-
 void DrawCrosshair(int size, int thickness)
 {
     int cx = GetScreenWidth()/2;
@@ -15,8 +13,6 @@ void DrawCrosshair(int size, int thickness)
     DrawRectangle(cx-size, cy-thickness/2, size*2, thickness, WHITE);
     DrawRectangle(cx-thickness/2, cy-size, thickness, size*2, WHITE);
 }
-
-// ------------------------------------------------------------
 
 class Level {
 public:
@@ -79,13 +75,10 @@ public:
     }
 };
 
-// ------------------------------------------------------------
 
 struct Impact{Vector3 pos;float life;};
 struct Laser{Vector3 start,end;float life;};
 struct Projectile{Vector3 pos,dir;float life,speed,radius=0.1f;};
-
-// ------------------------------------------------------------
 
 class Turret {
 public:
@@ -135,8 +128,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------
-
 class Player {
 public:
     Camera3D cam;
@@ -161,7 +152,6 @@ public:
     float camHeight=1.0f;
     float heightSmooth=12.0f;
 
-    // View bobbing
     float bobPhase=0;
     float bobSpeed=8.0f;
     float bobX=0.03f;
@@ -189,8 +179,6 @@ public:
                level->IsWall(x-r,z+r)||level->IsWall(x+r,z+r);
     }
 
-    // --------------------------------------------------------
-    // Get the gun tip position in world space (without view bob)
     Vector3 GetGunTip() const
     {
         Vector3 forward = { sinf(yaw)*cosf(pitch), sinf(pitch), cosf(yaw)*cosf(pitch) };
@@ -198,7 +186,6 @@ public:
         Vector3 up      = {0,1,0};
 
         Vector3 gunOffset = { 0.0f, -0.25f, 0.6f };
-
         Vector3 basePos = Vector3Add(pos, {0, camHeight, 0});
 
         return Vector3Add(
@@ -225,7 +212,6 @@ public:
         float moveLen=Vector3Length(mv);
         if(moveLen>0) mv=Vector3Normalize(mv);
 
-        // Smooth speed with sprint/crouch
         float targetSpeed=baseSpeed;
         if(IsKeyDown(KEY_LEFT_SHIFT)) targetSpeed*=sprintMult;
         if(IsKeyDown(KEY_LEFT_CONTROL)) targetSpeed*=crouchMult;
@@ -235,21 +221,17 @@ public:
         if(!Collides(pos.x+step.x,pos.z)) pos.x+=step.x;
         if(!Collides(pos.x,pos.z+step.z)) pos.z+=step.z;
 
-        // Jump
         if(onGround && IsKeyPressed(KEY_SPACE)){velY=jumpForce; onGround=false;}
         velY-=gravity*dt;
         pos.y+=velY*dt;
         if(pos.y<=0){pos.y=0; velY=0; onGround=true;}
 
-        // Smooth camera height
         float targetHeight=IsKeyDown(KEY_LEFT_CONTROL)?crouchHeight:standHeight;
         camHeight=Lerp(camHeight,targetHeight,heightSmooth*dt);
 
-        // Ceiling collision
         float ceilingLimit=Level::CEILING_Y-camHeight;
         if(pos.y>ceilingLimit){pos.y=ceilingLimit; velY=0;}
 
-        // View bobbing
         float bobAmount=(moveLen>0 && onGround)?currentSpeed/baseSpeed:0;
         if(bobAmount>0) bobPhase+=dt*bobSpeed*bobAmount;
         else bobPhase=0;
@@ -270,33 +252,54 @@ public:
         lasers.erase(std::remove_if(lasers.begin(),lasers.end(),
             [](auto&l){return l.life<=0;}),lasers.end());
     }
-
+    
     void Shoot()
     {
-        Vector3 start=GetGunTip();
-        Vector3 dir=Vector3Normalize(Vector3Subtract(cam.target, cam.position));
+        Vector3 start = GetGunTip();
+        Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target, cam.position));
 
-        for(float d=0;d<50;d+=0.05f)
+        const float floorY = 0.0f;
+        const float ceilingY = Level::CEILING_Y;
+        const float maxDist = 50.0f;
+        const float step = 0.05f;
+
+        for(float d = 0; d < maxDist; d += step)
         {
-            Vector3 p=Vector3Add(start, Vector3Scale(dir,d));
-
+            Vector3 p = Vector3Add(start, Vector3Scale(dir, d));
+            
             if(turret->IsAlive())
             {
-                float dx=p.x-turret->pos.x;
-                float dz=p.z-turret->pos.z;
-                if(dx*dx+dz*dz<turret->radius*turret->radius)
+                float dx = p.x - turret->pos.x;
+                float dz = p.z - turret->pos.z;
+                if(dx*dx + dz*dz < turret->radius * turret->radius)
                 {
                     turret->TakeDamage(10);
-                    impacts.push_back({p,0.25f});
-                    lasers.push_back({start,p,0.08f});
+                    impacts.push_back({p, 0.25f});
+                    lasers.push_back({start, p, 0.08f});
                     return;
                 }
             }
-
-            if(level->IsWall(p.x,p.z))
+            
+            if(level->IsWall(p.x, p.z))
             {
-                impacts.push_back({p,0.25f});
-                lasers.push_back({start,p,0.08f});
+                impacts.push_back({p, 0.25f});
+                lasers.push_back({start, p, 0.08f});
+                return;
+            }
+            
+            if(p.y <= floorY)
+            {
+                p.y = floorY;
+                impacts.push_back({p, 0.25f});
+                lasers.push_back({start, p, 0.08f});
+                return;
+            }
+            
+            if(p.y >= ceilingY)
+            {
+                p.y = ceilingY;
+                impacts.push_back({p, 0.25f});
+                lasers.push_back({start, p, 0.08f});
                 return;
             }
         }
@@ -319,14 +322,69 @@ public:
     void DrawImpacts(){for(auto&i:impacts)DrawSphere(i.pos,0.08f,RED);}
 };
 
-// ------------------------------------------------------------
-
 class Game {
 public:
     Level level;
     Turret turret{{3.5f,0.25f,15.5f}};
     Player player{&level,&turret};
     std::vector<Projectile> projectiles;
+    
+    void Reset()
+    {
+        player.pos = {2.5f,0,2.5f};
+        player.velY = 0;
+        player.hp = 100;
+        player.camHeight = player.standHeight;
+        player.impacts.clear();
+        player.lasers.clear();
+        player.yaw = 0;
+        player.pitch = 0;
+
+        turret.hp = 30;
+        turret.fireCooldown = 0;
+
+        projectiles.clear();
+    }
+
+    void DrawMinimap()
+    {
+        const int mapSize = 200;
+        const int margin = 20;
+        const float scale = mapSize / (Level::W * Level::CELL);
+
+        int startX = GetScreenWidth() - mapSize - margin;
+        int startY = margin;
+
+        DrawRectangle(startX - 4, startY - 4, mapSize + 8, mapSize + 8, BLACK);
+        DrawRectangle(startX, startY, mapSize, mapSize, DARKGRAY);
+        
+        for(int z = 0; z < Level::H; z++)
+            for(int x = 0; x < Level::W; x++)
+                if(level.grid[z][x] == 1)
+                {
+                    int rx = startX + x * Level::CELL * scale;
+                    int ry = startY + z * Level::CELL * scale;
+                    int cellSize = Level::CELL * scale;
+                    DrawRectangle(rx, ry, cellSize, cellSize, GRAY);
+                }
+        
+        float px = startX + player.pos.x * scale;
+        float pz = startY + player.pos.z * scale;
+        float angle = player.yaw;
+        float size = 10.0f;
+
+        Vector2 tip = { px + sinf(angle) * size, pz + cosf(angle) * size };
+        Vector2 left = { px + sinf(angle + 2.5f) * size * 0.6f, pz + cosf(angle + 2.5f) * size * 0.6f };
+        Vector2 right = { px + sinf(angle - 2.5f) * size * 0.6f, pz + cosf(angle - 2.5f) * size * 0.6f };
+        DrawTriangle(tip, left, right, BLUE);
+        
+        if(turret.IsAlive())
+        {
+            int tx = startX + turret.pos.x * scale;
+            int tz = startY + turret.pos.z * scale;
+            DrawCircle(tx, tz, 6, RED);
+        }
+    }
 
     void Run()
     {
@@ -337,13 +395,15 @@ public:
 
         while(!WindowShouldClose())
         {
-            float dt=GetFrameTime();
+            float dt = GetFrameTime();
             player.Update(dt);
-            turret.Update(dt,player.pos,projectiles,level);
+            turret.Update(dt, player.pos, projectiles, level);
 
-            for(auto&p:projectiles)
-                if(Vector3Distance(player.pos,p.pos)<player.radius+p.radius)
-                    {player.hp-=10;p.life=0;}
+            for(auto&p : projectiles)
+                if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius)
+                    { player.hp -= 10; p.life = 0; }
+            
+            if(player.hp <= 0) Reset();
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -359,9 +419,11 @@ public:
             EndMode3D();
 
             DrawFPS(10,10);
-            DrawText(TextFormat("HP: %d",(int)player.hp),
-                     10,GetScreenHeight()-30,20,RED);
+            DrawText(TextFormat("HP: %d",(int)player.hp), 10, GetScreenHeight()-30,20,RED);
             DrawCrosshair(6,2);
+
+            DrawMinimap();
+
             EndDrawing();
         }
         CloseWindow();
