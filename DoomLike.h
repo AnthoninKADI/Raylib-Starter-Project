@@ -162,6 +162,10 @@ public:
 
     int hp=100;
     int maxHp=100;
+    
+    int ammoInClip = 10;
+    int clipSize = 10;
+    int ammoStock = 30;
 
     Player(Level*l,std::vector<Turret*>& turs):level(l),turrets(turs)
     {
@@ -241,6 +245,7 @@ public:
         cam.target=Vector3Add(cam.position, {sinf(yaw)*cosf(pitch), sinf(pitch), cosf(yaw)*cosf(pitch)});
 
         if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) Shoot();
+        if(IsKeyPressed(KEY_R)) Reload();
 
         for(auto&i:impacts)i.life-=dt;
         impacts.erase(std::remove_if(impacts.begin(),impacts.end(),
@@ -253,6 +258,9 @@ public:
 
     void Shoot()
     {
+        if(ammoInClip<=0) return; 
+        ammoInClip--;
+
         Vector3 start = GetGunTip();
         Vector3 dir = Vector3Normalize(Vector3Subtract(cam.target, cam.position));
 
@@ -306,6 +314,17 @@ public:
         }
     }
 
+    void Reload()
+    {
+        int needed = clipSize - ammoInClip;
+        if(needed>0 && ammoStock>0)
+        {
+            int taken = (ammoStock >= needed) ? needed : ammoStock;
+            ammoInClip += taken;
+            ammoStock -= taken;
+        }
+    }
+
     void DrawGun()
     {
         rlPushMatrix();
@@ -317,67 +336,48 @@ public:
         rlPopMatrix();
     }
 
-    void DrawLasers(){for(auto&l:lasers)
-        DrawCylinderEx(l.start,l.end,0.03f,0.03f,6,Color{0,255,255,200});}
-
-    void DrawImpacts(){for(auto&i:impacts)DrawSphere(i.pos,0.08f,RED);}
+    void DrawLasers(){for(auto&l:lasers) DrawCylinderEx(l.start,l.end,0.03f,0.03f,6,Color{0,255,255,200});}
+    void DrawImpacts(){for(auto&i:impacts) DrawSphere(i.pos,0.08f,RED);}
 
     void DrawHpBar()
     {
-        int w = 200;
-        int h = 20;
-        int x = 20;
-        int y = GetScreenHeight()-40;
-
+        int w = 200; int h = 20; int x = 20; int y = GetScreenHeight()-40;
         DrawRectangle(x-2,y-2,w+4,h+4,BLACK);
         DrawRectangle(x,y,w*(hp/(float)maxHp),h,RED);
     }
+
+    void DrawAmmoUI()
+    {
+        int x = 20; int y = GetScreenHeight()-70;
+        DrawText(TextFormat("Ammo: %d / %d", ammoInClip, ammoStock), x, y, 20, WHITE);
+    }
 };
 
-struct HealthPack {
-    Vector3 pos;
-    float radius = 0.3f;
-    bool active = true;
-};
+struct HealthPack { Vector3 pos; float radius = 0.3f; bool active = true; };
+struct AmmoPack   { Vector3 pos; float radius = 0.3f; int amount=10; bool active = true; };
 
 class Game {
 public:
     Level level;
-    std::vector<Turret> turrets = {
-        {{7.5f,0.25f,15.5f}},
-        {{8.0f,0.25f,12.5f}},
-        {{5.0f,0.25f,8.0f}}
-    };
+    std::vector<Turret> turrets = { {{7.5f,0.25f,15.5f}}, {{8.0f,0.25f,12.5f}}, {{5.0f,0.25f,8.0f}} };
     std::vector<Turret*> turretPtrs;
     Player player{&level, turretPtrs};
     std::vector<Projectile> projectiles;
 
-    std::vector<HealthPack> healthPacks = {
-        {{3.5f,0.25f,3.5f}},
-        {{6.5f,0.25f,10.5f}}
-    };
+    std::vector<HealthPack> healthPacks = { {{3.5f,0.25f,3.5f}}, {{6.5f,0.25f,10.5f}} };
+    std::vector<AmmoPack> ammoPacks = { {{4.5f,0.25f,4.5f},0.3f,10,true}, {{7.0f,0.25f,7.0f},0.3f,15,true} };
 
-    Game()
-    {
-        for(auto& t : turrets) turretPtrs.push_back(&t);
-        player.turrets = turretPtrs;
-    }
+    Game() { for(auto& t : turrets) turretPtrs.push_back(&t); player.turrets = turretPtrs; }
 
     void Reset()
     {
-        player.pos = {2.5f,0,2.5f};
-        player.velY = 0;
-        player.hp = player.maxHp;
-        player.camHeight = player.standHeight;
-        player.impacts.clear();
-        player.lasers.clear();
-        player.yaw = 0;
-        player.pitch = 0;
+        player.pos = {2.5f,0,2.5f}; player.velY=0; player.hp=player.maxHp; player.camHeight=player.standHeight;
+        player.impacts.clear(); player.lasers.clear(); player.yaw=0; player.pitch=0;
+        player.ammoInClip=player.clipSize; player.ammoStock=30;
 
-        for(auto& t : turrets) { t.hp = 30; t.fireCooldown = 0; }
-
-        for(auto& pack : healthPacks) pack.active = true;
-
+        for(auto& t: turrets){ t.hp=30; t.fireCooldown=0; }
+        for(auto& pack: healthPacks) pack.active = true;
+        for(auto& pack: ammoPacks) pack.active = true;
         projectiles.clear();
     }
 
@@ -386,69 +386,58 @@ public:
         for(auto& pack : healthPacks)
         {
             if(!pack.active) continue;
-            float dist = Vector3Distance(player.pos, pack.pos);
-            if(dist < player.radius + pack.radius)
+            if(Vector3Distance(player.pos, pack.pos) < player.radius + pack.radius)
             {
                 player.hp += 30;
-                if(player.hp > player.maxHp) player.hp = player.maxHp;
+                if(player.hp>player.maxHp) player.hp=player.maxHp;
                 pack.active = false;
             }
         }
     }
 
-    void DrawHealthPacks()
+    void CheckAmmoPacks()
     {
-        for(auto& pack : healthPacks)
-            if(pack.active) DrawCube(pack.pos,0.4f,0.4f,0.4f,GREEN);
+        for(auto& pack : ammoPacks)
+        {
+            if(!pack.active) continue;
+            if(Vector3Distance(player.pos, pack.pos) < player.radius + pack.radius)
+            {
+                player.ammoStock += pack.amount;
+                pack.active = false;
+            }
+        }
     }
+
+    void DrawHealthPacks(){ for(auto& pack: healthPacks) if(pack.active) DrawCube(pack.pos,0.4f,0.4f,0.4f,GREEN); }
+    void DrawAmmoPacks()  { for(auto& pack: ammoPacks) if(pack.active) DrawCube(pack.pos,0.4f,0.4f,0.4f,YELLOW); }
 
     void DrawMinimap()
     {
-        const int mapSize = 200;
-        const int margin = 20;
-        const float scale = mapSize / (Level::W * Level::CELL);
+        const int mapSize = 200; const int margin=20; const float scale = mapSize/(Level::W*Level::CELL);
+        int startX = GetScreenWidth() - mapSize - margin; int startY=margin;
+        DrawRectangle(startX-4,startY-4,mapSize+8,mapSize+8,BLACK);
+        DrawRectangle(startX,startY,mapSize,mapSize,DARKGRAY);
 
-        int startX = GetScreenWidth() - mapSize - margin;
-        int startY = margin;
-
-        DrawRectangle(startX - 4, startY - 4, mapSize + 8, mapSize + 8, BLACK);
-        DrawRectangle(startX, startY, mapSize, mapSize, DARKGRAY);
-
-        for(int z = 0; z < Level::H; z++)
-            for(int x = 0; x < Level::W; x++)
-                if(level.grid[z][x] == 1)
+        for(int z=0; z<Level::H; z++)
+            for(int x=0; x<Level::W; x++)
+                if(level.grid[z][x]==1)
                 {
-                    int rx = startX + x * Level::CELL * scale;
-                    int ry = startY + z * Level::CELL * scale;
-                    int cellSize = Level::CELL * scale;
-                    DrawRectangle(rx, ry, cellSize, cellSize, GRAY);
+                    int rx = startX + x*Level::CELL*scale;
+                    int ry = startY + z*Level::CELL*scale;
+                    int cellSize = Level::CELL*scale;
+                    DrawRectangle(rx,ry,cellSize,cellSize,GRAY);
                 }
 
-        float px = startX + player.pos.x * scale;
-        float pz = startY + player.pos.z * scale;
-        float angle = player.yaw;
-        float size = 10.0f;
+        float px = startX + player.pos.x*scale; float pz = startY + player.pos.z*scale;
+        float angle = player.yaw; float size = 10.0f;
+        Vector2 tip = { px + sinf(angle)*size, pz + cosf(angle)*size };
+        Vector2 left= { px + sinf(angle+2.5f)*size*0.6f, pz + cosf(angle+2.5f)*size*0.6f };
+        Vector2 right={ px + sinf(angle-2.5f)*size*0.6f, pz + cosf(angle-2.5f)*size*0.6f };
+        DrawTriangle(tip,left,right,BLUE);
 
-        Vector2 tip = { px + sinf(angle) * size, pz + cosf(angle) * size };
-        Vector2 left = { px + sinf(angle + 2.5f) * size * 0.6f, pz + cosf(angle + 2.5f) * size * 0.6f };
-        Vector2 right = { px + sinf(angle - 2.5f) * size * 0.6f, pz + cosf(angle - 2.5f) * size * 0.6f };
-        DrawTriangle(tip, left, right, BLUE);
-
-        for(auto& t : turrets)
-            if(t.IsAlive())
-            {
-                int tx = startX + t.pos.x * scale;
-                int tz = startY + t.pos.z * scale;
-                DrawCircle(tx, tz, 6, RED);
-            }
-
-        for(auto& pack : healthPacks)
-            if(pack.active)
-            {
-                int hx = startX + pack.pos.x * scale;
-                int hz = startY + pack.pos.z * scale;
-                DrawCircle(hx, hz, 5, GREEN);
-            }
+        for(auto& t: turrets) if(t.IsAlive()){ int tx=startX+t.pos.x*scale; int tz=startY+t.pos.z*scale; DrawCircle(tx,tz,6,RED); }
+        for(auto& pack: healthPacks) if(pack.active){ int hx=startX+pack.pos.x*scale; int hz=startY+pack.pos.z*scale; DrawCircle(hx,hz,5,GREEN); }
+        for(auto& pack: ammoPacks) if(pack.active){ int hx=startX+pack.pos.x*scale; int hz=startY+pack.pos.z*scale; DrawCircle(hx,hz,5,YELLOW); }
     }
 
     void Run()
@@ -460,19 +449,18 @@ public:
 
         while(!WindowShouldClose())
         {
-            float dt = GetFrameTime();
+            float dt=GetFrameTime();
             player.Update(dt);
 
-            for(auto& t: turrets)
-                t.Update(dt, player.pos, projectiles, level);
+            for(auto& t: turrets) t.Update(dt, player.pos, projectiles, level);
 
             for(auto&p : projectiles)
-                if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius)
-                    { player.hp -= 10; p.life = 0; }
+                if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius) { player.hp-=10; p.life=0; }
 
             CheckHealthPacks();
+            CheckAmmoPacks();
 
-            if(player.hp <= 0) Reset();
+            if(player.hp<=0) Reset();
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -481,14 +469,16 @@ public:
                 level.Draw();
                 for(auto& t: turrets) t.Draw();
                 DrawHealthPacks();
+                DrawAmmoPacks();
                 player.DrawLasers();
                 player.DrawImpacts();
                 player.DrawGun();
-                for(auto&p:projectiles) DrawSphere(p.pos,p.radius,YELLOW);
+                for(auto&p:projectiles) DrawSphere(p.pos,p.radius,VIOLET);
             EndMode3D();
 
             DrawFPS(10,10);
             player.DrawHpBar();
+            player.DrawAmmoUI();
             DrawCrosshair(6,2);
             DrawMinimap();
 
@@ -497,4 +487,3 @@ public:
         CloseWindow();
     }
 };
-
