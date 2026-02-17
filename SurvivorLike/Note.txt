@@ -1,0 +1,28 @@
+﻿Truc qui tourne autour  
+4 axe laser / 4 axe laser diag Xpose des zones 
+tir qui transperse 
+knockback 
+tir enflammé 
+armure ronciere 
+trainer derriere soi 
+ricochet 
+shotgun 
+eclair 
+aura / bloquer 
+
+vol de vie 
+speed 
+range
+damage 
+armor 
+duration 
+cd 
+max hp 
+crit % 
+multi shot 
+
+heal
+magnet
+kill all
+upgrade ?
+slowmotion

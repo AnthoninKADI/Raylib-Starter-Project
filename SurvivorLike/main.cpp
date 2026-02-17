@@ -26,7 +26,7 @@ const int screenWidth  = 1600;
 const int screenHeight = 900;
 const float menuWidth  = 350.0f;
 
-float tileSize = 64.0f;
+float tileSize = 80.0f;
 const int mapWidth  = 200;
 const int mapHeight = 200;
 
