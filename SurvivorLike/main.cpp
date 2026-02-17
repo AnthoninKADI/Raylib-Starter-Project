@@ -1,253 +1,319 @@
 #include "raylib.h"
-#include "imgui.h"
 #include "rlImGui.h"
-#include <cmath>
+#include "imgui.h"
+#include "DebugMenu.h"
 #include <vector>
+#include <cmath>
 #include <string>
+#include <algorithm>
 
-enum GameState {
-    MENU,
-    SELECT,
-    GAME
-};
 
-struct Player {
-    Vector2 position;
-    float radius;
+struct Enemy {
+    Vector2 pos;
+    float size;
     float speed;
-    Color color;
+    Texture2D texture;
 };
 
-struct Card {
-    Rectangle rect;
-    Color color;
-    std::string title;
-    std::string description;
+struct XPOrb {
+    Vector2 pos;
+    float size;
+    Texture2D texture;
 };
 
-int main() {
 
-    const int screenWidth = 1600;
-    const int screenHeight = 900;
-    const float debugWidth = 300.0f;
+const int screenWidth  = 1600;
+const int screenHeight = 900;
+const float menuWidth  = 350.0f;
 
-    InitWindow(screenWidth, screenHeight, "Vampire Survivor Like");
+float tileSize = 64.0f;
+const int mapWidth  = 200;
+const int mapHeight = 200;
+
+
+Vector2 playerPos;
+float playerSpeed = 400.0f;
+float playerSize  = 80.0f;
+int playerLevel   = 1;
+float playerXP    = 0;
+float xpToLevel   = 100;
+float xpOrbValue  = 10.0f;
+
+int totalKills = 0;
+
+
+std::vector<Enemy> enemies;
+float enemySpawnInterval = 2.0f;
+float enemySpawnTimer    = 0.0f;
+float enemySpeed         = 150.0f;
+float enemySize          = 60.0f;
+bool spawnOnClick        = false;
+
+
+std::vector<XPOrb> xpOrbs;
+
+
+struct Tile { Vector2 pos; Texture2D texture; };
+std::vector<Tile> mapTiles;
+
+
+float gameTime = 0.0f;
+bool killAllEnemiesFlag = false;
+
+std::string FormatTime(float seconds)
+{
+    int h = (int)(seconds/3600);
+    int m = ((int)seconds%3600)/60;
+    int s = (int)seconds%60;
+
+    char buffer[32];
+    if(h>0) sprintf_s(buffer,sizeof(buffer),"%dh%02dm%02ds",h,m,s);
+    else if(m>0) sprintf_s(buffer,sizeof(buffer),"%dm%02ds",m,s);
+    else sprintf_s(buffer,sizeof(buffer),"%ds",s);
+
+    return std::string(buffer);
+}
+
+std::string FormatXP(float xp,float xpNext)
+{
+    char buf[32];
+    sprintf_s(buf,sizeof(buf),"%.0f / %.0f",xp,xpNext);
+    return std::string(buf);
+}
+
+void DrawTextOutlined(Font font, const std::string& text, Vector2 pos, float fontSize, float spacing, Color color)
+{
+    DrawTextEx(font, text.c_str(), {pos.x-2, pos.y}, fontSize, spacing, BLACK);
+    DrawTextEx(font, text.c_str(), {pos.x+2, pos.y}, fontSize, spacing, BLACK);
+    DrawTextEx(font, text.c_str(), {pos.x, pos.y-2}, fontSize, spacing, BLACK);
+    DrawTextEx(font, text.c_str(), {pos.x, pos.y+2}, fontSize, spacing, BLACK);
+    DrawTextEx(font, text.c_str(), pos, fontSize, spacing, color);
+}
+
+int main()
+{
+    InitWindow(screenWidth, screenHeight,"Vampire Survivor Base");
     SetTargetFPS(60);
     rlImGuiSetup(true);
 
-    GameState state = MENU;
+    Font gameFont = LoadFontEx("assets/font/Nordhin.ttf",64,0,0);
+    SetTextureFilter(gameFont.texture,TEXTURE_FILTER_BILINEAR);
 
-    Player player;
-    player.radius = 20;
-    player.speed = 300;
-    player.position = { 1000, 450 };
-    player.color = WHITE;
+    Texture2D texGrass  = LoadTexture("assets/textures/Grass.png");
+    Texture2D texPlayer = LoadTexture("assets/textures/PlayerSlime.png");
+    Texture2D texEnemy  = LoadTexture("assets/textures/EnemySlime.png");
+    Texture2D texXP     = LoadTexture("assets/textures/XP.png");
+    Texture2D texSkull  = LoadTexture("assets/textures/skull.png");
 
-    Color grassColor = {144, 238, 144, 255};
+    // MAP
+    for(int x=0;x<mapWidth;x++)
+        for(int y=0;y<mapHeight;y++)
+            mapTiles.push_back({ {x*tileSize,y*tileSize}, texGrass });
 
-    float cardWidth = 250;
-    float cardHeight = 350;
-    float spacing = 80;
+    playerPos = { mapWidth*tileSize/2.0f, mapHeight*tileSize/2.0f };
 
-    std::vector<Card> cards;
+    Camera2D camera = {0};
+    camera.target   = playerPos;
+    camera.offset   = { (screenWidth-menuWidth)/2.0f, screenHeight/2.0f };
+    camera.zoom     = 1.0f;
 
-    float totalWidth = (cardWidth * 3) + (spacing * 2);
-    float startX = (screenWidth - totalWidth) / 2.0f;
-    float centerY = screenHeight / 2.0f - cardHeight / 2.0f;
+    DebugMenu debugMenu(menuWidth);
 
-    cards.push_back({
-        {startX, centerY, cardWidth, cardHeight},
-        RED,
-        "Blood Reaper",
-        "Enemies burn with rage.\nVery angry tomatoes."
-    });
-
-    cards.push_back({
-        {startX + cardWidth + spacing, centerY, cardWidth, cardHeight},
-        BLUE,
-        "Frost Walker",
-        "Enemies are cool.\nLiterally too cool."
-    });
-
-    cards.push_back({
-        {startX + (cardWidth + spacing) * 2, centerY, cardWidth, cardHeight},
-        PURPLE,
-        "Void Spawn",
-        "Enemies from the void.\nProbably unpaid interns."
-    });
-
-    int currentTheme = 0;
-
-    while (!WindowShouldClose()) {
-
+    while(!WindowShouldClose())
+    {
         float delta = GetFrameTime();
-        Vector2 mouse = GetMousePosition();
+        gameTime += delta;
 
-        if (state == GAME) {
+        Vector2 dir = {0,0};
+        if(IsKeyDown(KEY_W)) dir.y -= 1;
+        if(IsKeyDown(KEY_S)) dir.y += 1;
+        if(IsKeyDown(KEY_A)) dir.x -= 1;
+        if(IsKeyDown(KEY_D)) dir.x += 1;
 
-            Vector2 direction = {0,0};
+        float len = sqrt(dir.x*dir.x + dir.y*dir.y);
+        if(len>0){ dir.x/=len; dir.y/=len; }
 
-            if (IsKeyDown(KEY_W)) direction.y -= 1;
-            if (IsKeyDown(KEY_S)) direction.y += 1;
-            if (IsKeyDown(KEY_A)) direction.x -= 1;
-            if (IsKeyDown(KEY_D)) direction.x += 1;
+        playerPos.x += dir.x*playerSpeed*delta;
+        playerPos.y += dir.y*playerSpeed*delta;
 
-            float length = sqrt(direction.x*direction.x + direction.y*direction.y);
-            if (length > 0) {
-                direction.x /= length;
-                direction.y /= length;
+        camera.target = playerPos;
+
+        enemySpawnTimer += delta;
+        if(enemySpawnTimer >= enemySpawnInterval)
+        {
+            enemySpawnTimer = 0.0f;
+            float angle = GetRandomValue(0,359) * DEG2RAD;
+            float radius = 300;
+
+            Enemy e;
+            e.pos = { playerPos.x + cos(angle)*radius,
+                      playerPos.y + sin(angle)*radius };
+            e.size = enemySize;
+            e.speed = enemySpeed;
+            e.texture = texEnemy;
+            enemies.push_back(e);
+        }
+
+        for(auto &e : enemies)
+        {
+            Vector2 d = { playerPos.x - e.pos.x,
+                          playerPos.y - e.pos.y };
+            float l = sqrt(d.x*d.x + d.y*d.y);
+            if(l>0){ d.x/=l; d.y/=l; }
+            e.pos.x += d.x*e.speed*delta;
+            e.pos.y += d.y*e.speed*delta;
+        }
+
+        for (int i = 0; i < xpOrbs.size(); )
+        {
+            float dx = playerPos.x - xpOrbs[i].pos.x;
+            float dy = playerPos.y - xpOrbs[i].pos.y;
+            float dist = sqrt(dx*dx + dy*dy);
+
+            float pickupRadius = playerSize * 0.6f;
+
+            if (dist < pickupRadius)
+            {
+                playerXP += xpOrbValue;
+                xpOrbs.erase(xpOrbs.begin() + i);
             }
+            else
+            {
+                i++;
+            }
+        }
 
-            player.position.x += direction.x * player.speed * delta;
-            player.position.y += direction.y * player.speed * delta;
+        while(playerXP >= xpToLevel)
+        {
+            playerXP -= xpToLevel;
+            playerLevel++;
+            xpToLevel *= 1.2f;
         }
 
         BeginDrawing();
-        ClearBackground(DARKGRAY);
+        ClearBackground(BLACK);
 
-        if (state == MENU) {
+        BeginMode2D(camera);
 
-            DrawText("VAMPIRE SURVIVOR LIKE", screenWidth/2 - 250, 200, 40, WHITE);
+        for(auto &tile : mapTiles)
+            DrawTexturePro(tile.texture,
+                {0,0,(float)tile.texture.width,(float)tile.texture.height},
+                {tile.pos.x,tile.pos.y,tileSize,tileSize},
+                {0,0},0,WHITE);
 
-            Rectangle playBtn = { screenWidth/2 - 100, 400, 200, 80 };
-            bool hover = CheckCollisionPointRec(mouse, playBtn);
+        float pScale = playerSize/texPlayer.width;
+        DrawTexturePro(texPlayer,
+            {0,0,(float)texPlayer.width,(float)texPlayer.height},
+            {playerPos.x,playerPos.y,
+             texPlayer.width*pScale,
+             texPlayer.height*pScale},
+            {texPlayer.width*pScale/2,
+             texPlayer.height*pScale/2},
+            0,WHITE);
 
-            DrawRectangleRec(playBtn, hover ? DARKPURPLE : PURPLE);
-            DrawText("PLAY", playBtn.x + 60, playBtn.y + 25, 30, WHITE);
-
-            if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                state = SELECT;
+        for(auto &e : enemies)
+        {
+            float s = e.size/e.texture.width;
+            DrawTexturePro(e.texture,
+                {0,0,(float)e.texture.width,(float)e.texture.height},
+                {e.pos.x,e.pos.y,
+                 e.texture.width*s,
+                 e.texture.height*s},
+                {e.texture.width*s/2,
+                 e.texture.height*s/2},
+                0,WHITE);
         }
 
-        else if (state == SELECT) {
-
-            DrawText("Choose Your Player Color",
-                     screenWidth/2 - 250,
-                     120,
-                     40,
-                     WHITE);
-
-            for (int i = 0; i < cards.size(); i++) {
-
-                Card& card = cards[i];
-                bool hover = CheckCollisionPointRec(mouse, card.rect);
-
-                float scale = hover ? 1.05f : 1.0f;
-
-                Rectangle scaled = {
-                    card.rect.x - (card.rect.width*(scale-1)/2),
-                    card.rect.y - (card.rect.height*(scale-1)/2),
-                    card.rect.width * scale,
-                    card.rect.height * scale
-                };
-
-                DrawRectangleRec(scaled, Color{40,40,40,255});
-
-                if (hover)
-                    DrawRectangleLinesEx(scaled, 4, card.color);
-
-                DrawCircle(scaled.x + scaled.width/2,
-                           scaled.y + 120,
-                           40,
-                           card.color);
-
-                DrawText(card.title.c_str(),
-                         scaled.x + 20,
-                         scaled.y + 200,
-                         22,
-                         WHITE);
-
-                DrawText(card.description.c_str(),
-                         scaled.x + 20,
-                         scaled.y + 240,
-                         18,
-                         GRAY);
-
-                if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    currentTheme = i;
-                    player.color = cards[i].color;
-                    state = GAME;
-                }
-            }
+        for(auto &orb : xpOrbs)
+        {
+            float s = orb.size/orb.texture.width;
+            DrawTexturePro(orb.texture,
+                {0,0,(float)orb.texture.width,(float)orb.texture.height},
+                {orb.pos.x,orb.pos.y,
+                 orb.texture.width*s,
+                 orb.texture.height*s},
+                {orb.texture.width*s/2,
+                 orb.texture.height*s/2},
+                0,WHITE);
         }
 
-        else if (state == GAME) {
+        EndMode2D();
+        
+        float barW = screenWidth-50-menuWidth;
+        float barH = 18;
+        float barX = 25;
+        float barY = 5;
 
-            DrawRectangle(debugWidth, 0,
-                          screenWidth - debugWidth,
-                          screenHeight,
-                          grassColor);
+        DrawRectangle(barX,barY,(int)barW,barH,BLACK);
+        DrawRectangle(barX,barY,(int)(barW*(playerXP/xpToLevel)),barH,SKYBLUE);
+        DrawRectangleLines(barX,barY,(int)barW,barH,WHITE);
 
-            DrawCircleV(player.position, player.radius, player.color);
+        std::string xpText = FormatXP(playerXP,xpToLevel);
+        Vector2 xpSize = MeasureTextEx(gameFont,xpText.c_str(),18,1);
+        DrawTextOutlined(gameFont,xpText,
+            {barX+barW/2-xpSize.x/2,barY+barH+2},
+            18,1,WHITE);
 
-            rlImGuiBegin();
+        std::string lvlText = "Lvl " + std::to_string(playerLevel);
+        Vector2 lvlSize = MeasureTextEx(gameFont,lvlText.c_str(),16,1);
+        DrawTextOutlined(gameFont,lvlText,
+            {barX+10,barY+(barH/2)-(lvlSize.y/2)},
+            16,1,WHITE);
 
-            ImGui::SetNextWindowPos(ImVec2(0,0));
-            ImGui::SetNextWindowSize(ImVec2(debugWidth, screenHeight));
-            ImGui::Begin("Debug Menu", nullptr,
-                         ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoResize |
-                         ImGuiWindowFlags_NoCollapse);
+        std::string timeStr = FormatTime(gameTime);
+        DrawTextOutlined(gameFont,timeStr,{25,40},36,2,WHITE);
 
-            if (ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen))
+        float skullSize = 28;
+        DrawTexturePro(texSkull,
+            {0,0,(float)texSkull.width,(float)texSkull.height},
+            {25,90,skullSize,skullSize},
+            {0,0},0,WHITE);
+
+        DrawTextOutlined(gameFont,std::to_string(totalKills),
+            {25+skullSize+10,92},
+            28,1,WHITE);
+
+        
+        debugMenu.Draw(screenWidth,screenHeight,
+                       playerSpeed,
+                       playerSize,
+                       enemySpeed,
+                       enemySize,
+                       enemySpawnInterval,
+                       spawnOnClick,
+                       tileSize,
+                       texGrass,
+                       texPlayer,
+                       texEnemy,
+                       texXP,
+                       gameFont,
+                       enemies,
+                       playerLevel,
+                       playerXP,
+                       xpToLevel,
+                       xpOrbValue,
+                       xpOrbs,
+                       &killAllEnemiesFlag);
+
+        if(killAllEnemiesFlag)
+        {
+            totalKills += enemies.size();
+
+            for(auto &e : enemies)
             {
-                ImGui::SliderFloat("Size", &player.radius, 5, 100);
-                ImGui::SliderFloat("Speed", &player.speed, 50, 800);
-
-                if (ImGui::TreeNode("Change Player Theme"))
-                {
-                    for (int i = 0; i < cards.size(); i++)
-                    {
-                        ImGui::PushID(i);
-
-                        bool isActive = (currentTheme == i);
-
-                        ImVec4 btnColor = ImVec4(
-                            cards[i].color.r / 255.0f,
-                            cards[i].color.g / 255.0f,
-                            cards[i].color.b / 255.0f,
-                            1.0f
-                        );
-
-                        ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
-                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                                              ImVec4(
-                                                  fmin(btnColor.x + 0.2f, 1.0f),
-                                                  fmin(btnColor.y + 0.2f, 1.0f),
-                                                  fmin(btnColor.z + 0.2f, 1.0f),
-                                                  1.0f));
-
-                        if (ImGui::Button(cards[i].title.c_str(), ImVec2(200, 40)))
-                        {
-                            currentTheme = i;
-                            player.color = cards[i].color;
-                        }
-
-                        if (isActive)
-                            ImGui::Text("Current");
-
-                        ImGui::PopStyleColor(2);
-                        ImGui::PopID();
-                    }
-
-                    ImGui::TreePop();
-                }
+                XPOrb orb;
+                orb.pos = e.pos;
+                orb.size = enemySize * 0.7f; 
+                orb.texture = texXP;
+                xpOrbs.push_back(orb);
             }
 
-            if (ImGui::CollapsingHeader("Map"))
-                ImGui::Text("Soon...");
-
-            if (ImGui::CollapsingHeader("Enemy"))
-                ImGui::Text("Soon...");
-
-            ImGui::End();
-            rlImGuiEnd();
+            enemies.clear();
+            killAllEnemiesFlag = false;
         }
 
         EndDrawing();
     }
 
-    rlImGuiShutdown();
-    CloseWindow();
     return 0;
 }

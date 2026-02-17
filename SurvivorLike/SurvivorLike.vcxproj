@@ -127,6 +127,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DebugMenu.h" />
     <ClInclude Include="dependencies\include\extras\FA6FreeSolidFontData.h" />
     <ClInclude Include="dependencies\include\extras\IconsFontAwesome6.h" />
     <ClInclude Include="dependencies\include\imconfig.h" />
@@ -138,8 +139,11 @@
     <ClInclude Include="dependencies\include\imstb_truetype.h" />
     <ClInclude Include="dependencies\include\rlImGui.h" />
     <ClInclude Include="dependencies\include\rlImGuiColors.h" />
+    <ClInclude Include="Entities.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DebugMenu.cpp" />
+    <ClCompile Include="Entities.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
