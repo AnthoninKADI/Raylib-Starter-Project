@@ -7,7 +7,6 @@
 #include <string>
 #include <algorithm>
 
-
 struct Enemy {
     Vector2 pos;
     float size;
@@ -21,7 +20,6 @@ struct XPOrb {
     Texture2D texture;
 };
 
-
 const int screenWidth  = 1600;
 const int screenHeight = 900;
 const float menuWidth  = 350.0f;
@@ -29,7 +27,6 @@ const float menuWidth  = 350.0f;
 float tileSize = 80.0f;
 const int mapWidth  = 200;
 const int mapHeight = 200;
-
 
 Vector2 playerPos;
 float playerSpeed = 400.0f;
@@ -39,8 +36,11 @@ float playerXP    = 0;
 float xpToLevel   = 100;
 float xpOrbValue  = 10.0f;
 
-int totalKills = 0;
+float playerMaxHP = 100.0f;
+float playerHP    = 100.0f;
+float playerInvincibilityTimer = 0.0f;
 
+int totalKills = 0;
 
 std::vector<Enemy> enemies;
 float enemySpawnInterval = 2.0f;
@@ -49,13 +49,10 @@ float enemySpeed         = 150.0f;
 float enemySize          = 60.0f;
 bool spawnOnClick        = false;
 
-
 std::vector<XPOrb> xpOrbs;
-
 
 struct Tile { Vector2 pos; Texture2D texture; };
 std::vector<Tile> mapTiles;
-
 
 float gameTime = 0.0f;
 bool killAllEnemiesFlag = false;
@@ -105,7 +102,6 @@ int main()
     Texture2D texXP     = LoadTexture("assets/textures/XP.png");
     Texture2D texSkull  = LoadTexture("assets/textures/skull.png");
 
-    // MAP
     for(int x=0;x<mapWidth;x++)
         for(int y=0;y<mapHeight;y++)
             mapTiles.push_back({ {x*tileSize,y*tileSize}, texGrass });
@@ -119,10 +115,19 @@ int main()
 
     DebugMenu debugMenu(menuWidth);
 
+    const float hitCooldown = 0.5f;
+    const float passiveRegen = 1.0f / 60.0f;
+
     while(!WindowShouldClose())
     {
         float delta = GetFrameTime();
         gameTime += delta;
+
+        if(playerInvincibilityTimer > 0) playerInvincibilityTimer -= delta;
+        else playerInvincibilityTimer = 0;
+
+        if(playerHP < playerMaxHP && playerInvincibilityTimer <= 0)
+            playerHP = std::min(playerMaxHP, playerHP + passiveRegen*delta*60.0f);
 
         Vector2 dir = {0,0};
         if(IsKeyDown(KEY_W)) dir.y -= 1;
@@ -162,6 +167,14 @@ int main()
             if(l>0){ d.x/=l; d.y/=l; }
             e.pos.x += d.x*e.speed*delta;
             e.pos.y += d.y*e.speed*delta;
+
+            float hitRadius = (playerSize + e.size) * 0.5f;
+            if(l < hitRadius && playerInvincibilityTimer <= 0)
+            {
+                playerHP -= 10.0f;
+                if(playerHP < 0) playerHP = 0;
+                playerInvincibilityTimer = hitCooldown;
+            }
         }
 
         for (int i = 0; i < xpOrbs.size(); )
@@ -210,6 +223,16 @@ int main()
             {texPlayer.width*pScale/2,
              texPlayer.height*pScale/2},
             0,WHITE);
+
+        if(playerHP < playerMaxHP)
+        {
+            float hpBarW = playerSize;
+            float hpBarH = 8;
+            Vector2 hpPos = { playerPos.x - hpBarW/2 - 2, playerPos.y - playerSize/2 - 10 + 2 };
+            DrawRectangle(hpPos.x, hpPos.y, hpBarW, hpBarH, RED);
+            DrawRectangle(hpPos.x, hpPos.y, hpBarW*(playerHP/playerMaxHP), hpBarH, GREEN);
+            DrawRectangleLines(hpPos.x, hpPos.y, hpBarW, hpBarH, WHITE);
+        }
 
         for(auto &e : enemies)
         {
@@ -273,7 +296,6 @@ int main()
             {25+skullSize+10,92},
             28,1,WHITE);
 
-        
         debugMenu.Draw(screenWidth,screenHeight,
                        playerSpeed,
                        playerSize,
@@ -293,7 +315,9 @@ int main()
                        xpToLevel,
                        xpOrbValue,
                        xpOrbs,
-                       &killAllEnemiesFlag);
+                       &killAllEnemiesFlag,
+                       playerHP,
+                       playerMaxHP);
 
         if(killAllEnemiesFlag)
         {

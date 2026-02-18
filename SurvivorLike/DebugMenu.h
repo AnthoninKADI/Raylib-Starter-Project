@@ -29,7 +29,9 @@ public:
               float& xpToLevel,
               float& xpOrbValue,
               std::vector<XPOrb>& xpOrbs,
-              bool* killAllEnemiesFlag);
+              bool* killAllEnemiesFlag,
+              float& playerHP,
+              float& playerMaxHP);
 
 private:
     float menuWidth;

@@ -7,7 +7,6 @@ DebugMenu::DebugMenu(float width)
 {
     menuWidth = width;
 
-    
     ImGuiStyle& style = ImGui::GetStyle();
 
     ImVec4 violet      = ImVec4(0.45f, 0.0f, 0.55f, 1.0f);
@@ -60,7 +59,9 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
                      float& xpToLevel,
                      float& xpOrbValue,
                      std::vector<XPOrb>& xpOrbs,
-                     bool* killAllEnemiesFlag)
+                     bool* killAllEnemiesFlag,
+                     float& playerHP,
+                     float& playerMaxHP)
 {
     rlImGuiBegin();
 
@@ -72,7 +73,6 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
                  ImGuiWindowFlags_NoResize |
                  ImGuiWindowFlags_NoCollapse);
 
-    
     if (ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::SliderFloat("Speed", &playerSpeed, 50.0f, 1000.0f);
@@ -94,9 +94,16 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
         if(ImGui::Button("-10")) playerLevel = std::max(1, playerLevel - 10);
 
         ImGui::SliderFloat("XP Orb Value", &xpOrbValue, 1.0f, 100.0f);
+
+        ImGui::Separator();
+        ImGui::Text("HP Controls");
+        ImGui::SliderFloat("HP", &playerHP, 0.0f, playerMaxHP);
+        ImGui::SliderFloat("Max HP", &playerMaxHP, 1.0f, 500.0f);
+        if(ImGui::Button("Damage 10"))  playerHP = std::max(0.0f, playerHP - 10.0f);
+        ImGui::SameLine();
+        if(ImGui::Button("Heal 10"))    playerHP = std::min(playerMaxHP, playerHP + 10.0f);
     }
 
-    
     if (ImGui::CollapsingHeader("Enemy", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::SliderFloat("Enemy Speed", &enemySpeed, 10.0f, 500.0f);
@@ -114,7 +121,6 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
         }
     }
 
-    
     if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::SliderFloat("Tile Size", &tileSize, 16.0f, 256.0f);
