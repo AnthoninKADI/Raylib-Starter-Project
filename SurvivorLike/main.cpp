@@ -42,6 +42,12 @@ float playerInvincibilityTimer = 0.0f;
 
 int totalKills = 0;
 
+struct LevelUpText {
+    Vector2 pos;
+    float timer;
+};
+std::vector<LevelUpText> levelUpTexts;
+
 std::vector<Enemy> enemies;
 float enemySpawnInterval = 2.0f;
 float enemySpawnTimer    = 0.0f;
@@ -117,6 +123,7 @@ int main()
 
     const float hitCooldown = 0.5f;
     const float passiveRegen = 1.0f / 60.0f;
+    const float flashSpeed = 15.0f;
 
     while(!WindowShouldClose())
     {
@@ -196,11 +203,17 @@ int main()
             }
         }
 
+        int oldLevel = playerLevel;
         while(playerXP >= xpToLevel)
         {
             playerXP -= xpToLevel;
             playerLevel++;
             xpToLevel *= 1.2f;
+
+            LevelUpText t;
+            t.pos = { playerPos.x, playerPos.y - playerSize - 20 };
+            t.timer = 2.0f;
+            levelUpTexts.push_back(t);
         }
 
         BeginDrawing();
@@ -215,6 +228,14 @@ int main()
                 {0,0},0,WHITE);
 
         float pScale = playerSize/texPlayer.width;
+
+        Color drawColor = WHITE;
+        if(playerInvincibilityTimer > 0)
+        {
+            int flashPhase = (int)(GetTime()*flashSpeed) % 2;
+            drawColor = (flashPhase == 0) ? RED : WHITE;
+        }
+
         DrawTexturePro(texPlayer,
             {0,0,(float)texPlayer.width,(float)texPlayer.height},
             {playerPos.x,playerPos.y,
@@ -222,7 +243,7 @@ int main()
              texPlayer.height*pScale},
             {texPlayer.width*pScale/2,
              texPlayer.height*pScale/2},
-            0,WHITE);
+            0, drawColor);
 
         if(playerHP < playerMaxHP)
         {
@@ -233,6 +254,16 @@ int main()
             DrawRectangle(hpPos.x, hpPos.y, hpBarW*(playerHP/playerMaxHP), hpBarH, GREEN);
             DrawRectangleLines(hpPos.x, hpPos.y, hpBarW, hpBarH, WHITE);
         }
+
+        for(auto &text : levelUpTexts)
+        {
+            DrawTextEx(gameFont, "LEVEL UP!", {text.pos.x - 50, text.pos.y}, 24, 1, YELLOW);
+            text.pos.y -= 30.0f * GetFrameTime();
+            text.timer -= GetFrameTime();
+        }
+        levelUpTexts.erase(std::remove_if(levelUpTexts.begin(), levelUpTexts.end(),
+                                          [](LevelUpText &t){ return t.timer <= 0; }),
+                           levelUpTexts.end());
 
         for(auto &e : enemies)
         {
