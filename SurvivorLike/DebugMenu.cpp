@@ -2,6 +2,7 @@
 #include "rlImGui.h"
 #include "imgui.h"
 #include <algorithm>
+#include <cmath>
 
 DebugMenu::DebugMenu(float width)
 {
@@ -64,8 +65,12 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
                      float& playerMaxHP,
                      float& enemySpawnRadius,
                      bool& showSpawnRadius,
-                     std::function<void()> ResetGameFunc,
-                     std::function<void(int)> LevelUpFunc)
+                     std::vector<Projectile>& projectiles,
+                     float& projectileSpeed,
+                     float& projectileCooldown,
+                     void(*resetGame)(),
+                     void(*forceLevelChange)(int)
+                     )
 {
     rlImGuiBegin();
 
@@ -85,37 +90,25 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
         ImGui::Separator();
         ImGui::Text("Level Controls");
 
-        if(ImGui::Button("+1"))  LevelUpFunc(1);
+        if(ImGui::Button("+1"))  { if(forceLevelChange) forceLevelChange(1); }
         ImGui::SameLine();
-        if(ImGui::Button("+5"))  LevelUpFunc(5);
+        if(ImGui::Button("+5"))  { if(forceLevelChange) forceLevelChange(5); }
         ImGui::SameLine();
-        if(ImGui::Button("+10")) LevelUpFunc(10);
+        if(ImGui::Button("+10")) { if(forceLevelChange) forceLevelChange(10); }
 
-        if(ImGui::Button("-1")) {
-            playerLevel = std::max(1, playerLevel - 1);
-            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;  
-        }
+        if(ImGui::Button("-1"))  { if(forceLevelChange) forceLevelChange(-1); }
         ImGui::SameLine();
-        if(ImGui::Button("-5")) {
-            playerLevel = std::max(1, playerLevel - 5);
-            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
-        }
+        if(ImGui::Button("-5"))  { if(forceLevelChange) forceLevelChange(-5); }
         ImGui::SameLine();
-        if(ImGui::Button("-10")) {
-            playerLevel = std::max(1, playerLevel - 10);
-            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
-        }
-
+        if(ImGui::Button("-10")) { if(forceLevelChange) forceLevelChange(-10); }
 
         ImGui::SliderFloat("XP Orb Value", &xpOrbValue, 1.0f, 100.0f);
 
         ImGui::Separator();
-        ImGui::Text("HP Controls");
+        ImGui::Text("HP");
+
         ImGui::SliderFloat("HP", &playerHP, 0.0f, playerMaxHP);
         ImGui::SliderFloat("Max HP", &playerMaxHP, 1.0f, 500.0f);
-        if(ImGui::Button("Damage 10"))  playerHP = std::max(0.0f, playerHP - 10.0f);
-        ImGui::SameLine();
-        if(ImGui::Button("Heal 10"))    playerHP = std::min(playerMaxHP, playerHP + 10.0f);
     }
 
     if (ImGui::CollapsingHeader("Enemy", ImGuiTreeNodeFlags_DefaultOpen))
@@ -124,29 +117,37 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
         ImGui::SliderFloat("Enemy Size", &enemySize, 20.0f, 200.0f);
         ImGui::SliderFloat("Spawn Interval", &enemySpawnInterval, 0.1f, 10.0f);
 
+        ImGui::SliderFloat("Spawn Radius", &enemySpawnRadius, 50.0f, 1000.0f);
+        ImGui::Checkbox("Show Radius", &showSpawnRadius);
         ImGui::Checkbox("Spawn On Click", &spawnOnClick);
 
         ImGui::Separator();
-
-        ImGui::SliderFloat("Spawn Radius", &enemySpawnRadius, 50.0f, 1000.0f);
-        ImGui::Checkbox("Show Radius", &showSpawnRadius);
-
-        if(ImGui::Button("Kill Enemies", ImVec2(-1,40)))
+        if(ImGui::Button("Kill All Enemies", ImVec2(-1,40)))
         {
             if(killAllEnemiesFlag)
                 *killAllEnemiesFlag = true;
         }
     }
+    
+    if (ImGui::CollapsingHeader("Projectile", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::SliderFloat("Projectile Speed", &projectileSpeed, 100.0f, 3000.0f);
+        ImGui::SliderFloat("Projectile Cooldown", &projectileCooldown, 0.05f, 2.0f);
 
+        ImGui::Text("Active Projectiles: %d", (int)projectiles.size());
+    }
+    
     if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::SliderFloat("Tile Size", &tileSize, 16.0f, 256.0f);
     }
 
     ImGui::Separator();
-    if(ImGui::Button("Restart Game", ImVec2(-1,50)))
+
+    if(ImGui::Button("Restart Game", ImVec2(-1,40)))
     {
-        ResetGameFunc();
+        if(resetGame)
+            resetGame();
     }
 
     ImGui::End();

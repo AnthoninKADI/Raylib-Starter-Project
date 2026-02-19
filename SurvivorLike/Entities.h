@@ -16,3 +16,11 @@ struct XPOrb
     int value;
     Texture2D texture;
 };
+
+struct Projectile
+{
+    Vector2 pos;
+    Vector2 dir;
+    float speed;
+    bool active;
+};
