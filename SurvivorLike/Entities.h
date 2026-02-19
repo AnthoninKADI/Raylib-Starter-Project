@@ -23,4 +23,7 @@ struct Projectile
     Vector2 dir;
     float speed;
     bool active;
+    float range;      
+    float travelled;  
 };
+

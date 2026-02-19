@@ -1,8 +1,8 @@
 #include "raylib.h"
 #include "rlImGui.h"
-#include "Entities.h"
 #include "imgui.h"
 #include "DebugMenu.h"
+#include "Entities.h"
 #include <vector>
 #include <cmath>
 #include <string>
@@ -71,12 +71,10 @@ std::string FormatTime(float seconds)
     int h = (int)(seconds/3600);
     int m = ((int)seconds%3600)/60;
     int s = (int)seconds%60;
-
     char buffer[32];
     if(h>0) sprintf_s(buffer,sizeof(buffer),"%dh%02dm%02ds",h,m,s);
     else if(m>0) sprintf_s(buffer,sizeof(buffer),"%dm%02ds",m,s);
     else sprintf_s(buffer,sizeof(buffer),"%ds",s);
-
     return std::string(buffer);
 }
 
@@ -104,21 +102,24 @@ void ResetGame()
     playerXP = 0;
     xpToLevel = 20.0f + pow(playerLevel,2.0f)*12.0f;
     totalKills = 0;
+
     enemies.clear();
     xpOrbs.clear();
     projectiles.clear();
+
+    enemySpawnTimer = 0.0f;      
+    projectileTimer = 0.0f;      
+    gameTime = 0.0f;             
+    levelUpTexts.clear();        
 }
+
 
 void ForceLevelChange(int delta)
 {
     int oldLevel = playerLevel;
-
     playerLevel += delta;
-    if(playerLevel < 1)
-        playerLevel = 1;
-
+    if(playerLevel < 1) playerLevel = 1;
     xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
-
     if(playerLevel > oldLevel)
     {
         LevelUpText t;
@@ -127,8 +128,6 @@ void ForceLevelChange(int delta)
         levelUpTexts.push_back(t);
     }
 }
-
-
 
 int main()
 {
@@ -167,7 +166,6 @@ int main()
         float delta = GetFrameTime();
         gameTime += delta;
         projectileTimer += delta;
-
         if(playerInvincibilityTimer > 0) playerInvincibilityTimer -= delta;
         else playerInvincibilityTimer = 0;
 
@@ -182,48 +180,40 @@ int main()
 
         float len = sqrt(dir.x*dir.x + dir.y*dir.y);
         if(len>0){ dir.x/=len; dir.y/=len; }
-
         playerPos.x += dir.x*playerSpeed*delta;
         playerPos.y += dir.y*playerSpeed*delta;
 
         camera.target = playerPos;
 
         enemySpawnTimer += delta;
-
-        if(spawnOnClick)
+        if(enemySpawnTimer >= enemySpawnInterval)
         {
-            if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                Enemy e;
-                e.size = enemySize;
-                e.speed = enemySpeed;
-                e.texture = texEnemy;
-                e.pos = GetScreenToWorld2D(GetMousePosition(), camera);
+            enemySpawnTimer = 0.0f;
 
-                enemies.push_back(e);
-            }
-        }
-        else
-        {
-            if(enemySpawnTimer >= enemySpawnInterval)
+            if(!spawnOnClick) // spawn automatique seulement si spawnOnClick n'est pas actif
             {
-                enemySpawnTimer = 0.0f;
-
                 float angle = GetRandomValue(0,359) * DEG2RAD;
-
                 Enemy e;
                 e.size = enemySize;
                 e.speed = enemySpeed;
                 e.texture = texEnemy;
-
-                e.pos = {
-                    playerPos.x + cos(angle)*enemySpawnRadius,
-                    playerPos.y + sin(angle)*enemySpawnRadius
-                };
-
+                e.pos = { playerPos.x + cos(angle)*enemySpawnRadius,
+                          playerPos.y + sin(angle)*enemySpawnRadius };
                 enemies.push_back(e);
             }
         }
+
+        // spawn au clic indépendant du timer
+        if(spawnOnClick && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            Enemy e;
+            e.size = enemySize;
+            e.speed = enemySpeed;
+            e.texture = texEnemy;
+            e.pos = GetScreenToWorld2D(GetMousePosition(), camera);
+            enemies.push_back(e);
+        }
+
 
         for(auto &e : enemies)
         {
@@ -247,7 +237,6 @@ int main()
             float dx = playerPos.x - xpOrbs[i].pos.x;
             float dy = playerPos.y - xpOrbs[i].pos.y;
             float dist = sqrt(dx*dx + dy*dy);
-
             float pickupRadius = playerSize * 0.6f;
 
             if(dist < pickupRadius)
@@ -270,63 +259,53 @@ int main()
             t.timer = levelUpDuration;
             levelUpTexts.push_back(t);
         }
-
         if(playerLevel < oldLevel)
-        {
             xpToLevel = 20.0f + pow(playerLevel,2.0f)*12.0f;
-        }
 
         if(projectileTimer >= projectileCooldown)
         {
             projectileTimer = 0.0f;
-
             if(!enemies.empty())
             {
                 Enemy* closest = nullptr;
                 float minDist = 999999.0f;
-
-                for(auto& e : enemies)
+                for(auto &e : enemies)
                 {
-                    float dx = e.pos.x - playerPos.x;
-                    float dy = e.pos.y - playerPos.y;
-                    float dist = sqrt(dx*dx + dy*dy);
-
-                    if(dist < minDist)
+                    float d = Distance(playerPos,e.pos);
+                    if(d < minDist)
                     {
-                        minDist = dist;
+                        minDist = d;
                         closest = &e;
                     }
                 }
-
-                if(closest != nullptr)
+                if(closest)
                 {
                     Projectile p;
                     p.pos = playerPos;
-
-                    Vector2 dir = { closest->pos.x - playerPos.x,
-                                    closest->pos.y - playerPos.y };
-
+                    Vector2 dir = {closest->pos.x - playerPos.x, closest->pos.y - playerPos.y};
                     float len = sqrt(dir.x*dir.x + dir.y*dir.y);
-                    if(len > 0)
-                    {
-                        dir.x /= len;
-                        dir.y /= len;
-                    }
-
+                    if(len>0){ dir.x/=len; dir.y/=len; }
                     p.dir = dir;
                     p.speed = projectileSpeed;
                     p.active = true;
-
+                    p.range = 1000.0f;
+                    p.travelled = 0.0f;
                     projectiles.push_back(p);
                 }
             }
         }
-        
+
         for(int i = 0; i < projectiles.size(); i++)
         {
             if(!projectiles[i].active) continue;
-            projectiles[i].pos.x += projectiles[i].dir.x*projectiles[i].speed*delta;
-            projectiles[i].pos.y += projectiles[i].dir.y*projectiles[i].speed*delta;
+            float dx = projectiles[i].dir.x * projectiles[i].speed * delta;
+            float dy = projectiles[i].dir.y * projectiles[i].speed * delta;
+
+            projectiles[i].pos.x += dx;
+            projectiles[i].pos.y += dy;
+            projectiles[i].travelled += sqrt(dx*dx + dy*dy);
+            if(projectiles[i].travelled >= projectiles[i].range)
+                projectiles[i].active = false;
 
             for(int j = 0; j < enemies.size(); j++)
             {
@@ -339,15 +318,15 @@ int main()
                     orb.value = 1;
                     orb.texture = texXP;
                     xpOrbs.push_back(orb);
-                    totalKills++; 
+
+                    totalKills++;
+
                     enemies.erase(enemies.begin()+j);
                     projectiles[i].active = false;
                     break;
                 }
             }
-
         }
-
         projectiles.erase(std::remove_if(projectiles.begin(),projectiles.end(),
                                          [](Projectile &p){ return !p.active; }),
                           projectiles.end());
@@ -357,16 +336,18 @@ int main()
         BeginMode2D(camera);
 
         for(auto &tile : mapTiles)
+        {
             DrawTexturePro(tile.texture,
                 {0,0,(float)tile.texture.width,(float)tile.texture.height},
                 {tile.pos.x,tile.pos.y,tileSize,tileSize},
                 {0,0},0,WHITE);
+        }
 
         float pScale = playerSize/texPlayer.width;
         Color drawColor = WHITE;
         if(playerInvincibilityTimer > 0)
         {
-            int flashPhase = (int)(GetTime()*flashSpeed) % 2;
+            int flashPhase = (int)(GetTime()*15.0f) % 2;
             drawColor = (flashPhase == 0) ? RED : WHITE;
         }
         DrawTexturePro(texPlayer,
@@ -416,9 +397,7 @@ int main()
         }
 
         for(auto &p : projectiles)
-        {
             DrawCircleV(p.pos,6,WHITE);
-        }
 
         if(showSpawnRadius)
             DrawCircleLines(playerPos.x,playerPos.y,enemySpawnRadius,RED);
@@ -460,43 +439,23 @@ int main()
             28,1,WHITE);
 
         debugMenu.Draw(
-      screenWidth,
-      screenHeight,
-      playerSpeed,
-      playerSize,
-      enemySpeed,
-      enemySize,
-      enemySpawnInterval,
-      spawnOnClick,
-      tileSize,
-      texGrass,
-      texPlayer,
-      texEnemy,
-      texXP,
-      gameFont,
-      enemies,
-      playerLevel,
-      playerXP,
-      xpToLevel,
-      xpOrbValue,
-      xpOrbs,
-      &killAllEnemiesFlag,
-      playerHP,
-      playerMaxHP,
-      enemySpawnRadius,
-      showSpawnRadius,
-      projectiles,
-      projectileSpeed,
-      projectileCooldown,
-      ResetGame,
-      ForceLevelChange
-  );
-
+            screenWidth, screenHeight,
+            playerSpeed, playerSize,
+            enemySpeed, enemySize,
+            enemySpawnInterval, spawnOnClick,
+            tileSize, texGrass, texPlayer, texEnemy, texXP,
+            gameFont, enemies,
+            playerLevel, playerXP, xpToLevel, xpOrbValue,
+            xpOrbs, &killAllEnemiesFlag,
+            playerHP, playerMaxHP,
+            enemySpawnRadius, showSpawnRadius,
+            projectiles, projectileSpeed, projectileCooldown,
+            ResetGame, ForceLevelChange
+        );
 
         if(killAllEnemiesFlag)
         {
             totalKills += enemies.size();
-
             for(auto &e : enemies)
             {
                 XPOrb orb;
@@ -505,7 +464,6 @@ int main()
                 orb.texture = texXP;
                 xpOrbs.push_back(orb);
             }
-
             enemies.clear();
             killAllEnemiesFlag = false;
         }
