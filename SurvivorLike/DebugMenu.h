@@ -1,9 +1,8 @@
 #pragma once
 #include "raylib.h"
 #include <vector>
-
-struct Enemy;
-struct XPOrb;
+#include <functional>
+#include "Entities.h"
 
 class DebugMenu
 {
@@ -31,7 +30,11 @@ public:
               std::vector<XPOrb>& xpOrbs,
               bool* killAllEnemiesFlag,
               float& playerHP,
-              float& playerMaxHP);
+              float& playerMaxHP,
+              float& enemySpawnRadius,
+              bool& showSpawnRadius,
+              std::function<void()> ResetGameFunc,
+              std::function<void(int)> LevelUpFunc);
 
 private:
     float menuWidth;

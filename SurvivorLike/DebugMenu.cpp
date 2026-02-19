@@ -61,7 +61,11 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
                      std::vector<XPOrb>& xpOrbs,
                      bool* killAllEnemiesFlag,
                      float& playerHP,
-                     float& playerMaxHP)
+                     float& playerMaxHP,
+                     float& enemySpawnRadius,
+                     bool& showSpawnRadius,
+                     std::function<void()> ResetGameFunc,
+                     std::function<void(int)> LevelUpFunc)
 {
     rlImGuiBegin();
 
@@ -81,17 +85,27 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
         ImGui::Separator();
         ImGui::Text("Level Controls");
 
-        if(ImGui::Button("+1"))  playerLevel += 1;
+        if(ImGui::Button("+1"))  LevelUpFunc(1);
         ImGui::SameLine();
-        if(ImGui::Button("+5"))  playerLevel += 5;
+        if(ImGui::Button("+5"))  LevelUpFunc(5);
         ImGui::SameLine();
-        if(ImGui::Button("+10")) playerLevel += 10;
+        if(ImGui::Button("+10")) LevelUpFunc(10);
 
-        if(ImGui::Button("-1"))  playerLevel = std::max(1, playerLevel - 1);
+        if(ImGui::Button("-1")) {
+            playerLevel = std::max(1, playerLevel - 1);
+            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;  
+        }
         ImGui::SameLine();
-        if(ImGui::Button("-5"))  playerLevel = std::max(1, playerLevel - 5);
+        if(ImGui::Button("-5")) {
+            playerLevel = std::max(1, playerLevel - 5);
+            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
+        }
         ImGui::SameLine();
-        if(ImGui::Button("-10")) playerLevel = std::max(1, playerLevel - 10);
+        if(ImGui::Button("-10")) {
+            playerLevel = std::max(1, playerLevel - 10);
+            xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
+        }
+
 
         ImGui::SliderFloat("XP Orb Value", &xpOrbValue, 1.0f, 100.0f);
 
@@ -114,6 +128,9 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
 
         ImGui::Separator();
 
+        ImGui::SliderFloat("Spawn Radius", &enemySpawnRadius, 50.0f, 1000.0f);
+        ImGui::Checkbox("Show Radius", &showSpawnRadius);
+
         if(ImGui::Button("Kill Enemies", ImVec2(-1,40)))
         {
             if(killAllEnemiesFlag)
@@ -124,6 +141,12 @@ void DebugMenu::Draw(float screenWidth, float screenHeight,
     if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::SliderFloat("Tile Size", &tileSize, 16.0f, 256.0f);
+    }
+
+    ImGui::Separator();
+    if(ImGui::Button("Restart Game", ImVec2(-1,50)))
+    {
+        ResetGameFunc();
     }
 
     ImGui::End();
