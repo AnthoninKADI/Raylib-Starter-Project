@@ -2,23 +2,11 @@
 #include "rlImGui.h"
 #include "imgui.h"
 #include "DebugMenu.h"
+#include "Entities.h"
 #include <vector>
 #include <cmath>
 #include <string>
 #include <algorithm>
-
-struct Enemy {
-    Vector2 pos;
-    float size;
-    float speed;
-    Texture2D texture;
-};
-
-struct XPOrb {
-    Vector2 pos;
-    float size;
-    Texture2D texture;
-};
 
 const int screenWidth  = 1600;
 const int screenHeight = 900;
@@ -35,6 +23,7 @@ int playerLevel   = 1;
 float playerXP    = 0;
 float xpToLevel   = 100;
 float xpOrbValue  = 10.0f;
+float levelUpDuration = 1.0f; 
 
 float playerMaxHP = 100.0f;
 float playerHP    = 100.0f;
@@ -62,6 +51,22 @@ std::vector<Tile> mapTiles;
 
 float gameTime = 0.0f;
 bool killAllEnemiesFlag = false;
+
+float CalculateXPForLevel(int level)
+{
+    if(level <= 1) return 100.0f;
+
+    float base = 100.0f;
+    for(int i = 2; i <= level; i++)
+    {
+        if(i < 10)        base += 35.0f;
+        else if(i < 20)   base += 55.0f;
+        else if(i < 40)   base += 80.0f;
+        else if(i < 60)   base += 110.0f;
+        else              base += 150.0f;
+    }
+    return base;
+}
 
 std::string FormatTime(float seconds)
 {
@@ -122,19 +127,23 @@ int main()
     DebugMenu debugMenu(menuWidth);
 
     const float hitCooldown = 0.5f;
-    const float passiveRegen = 1.0f / 60.0f;
+    const float passiveRegen = 1.0f;
     const float flashSpeed = 15.0f;
+
+    int previousLevel = playerLevel;
 
     while(!WindowShouldClose())
     {
         float delta = GetFrameTime();
         gameTime += delta;
 
+        previousLevel = playerLevel;
+
         if(playerInvincibilityTimer > 0) playerInvincibilityTimer -= delta;
         else playerInvincibilityTimer = 0;
 
         if(playerHP < playerMaxHP && playerInvincibilityTimer <= 0)
-            playerHP = std::min(playerMaxHP, playerHP + passiveRegen*delta*60.0f);
+            playerHP = std::min(playerMaxHP, playerHP + passiveRegen*delta);
 
         Vector2 dir = {0,0};
         if(IsKeyDown(KEY_W)) dir.y -= 1;
@@ -149,7 +158,7 @@ int main()
         playerPos.y += dir.y*playerSpeed*delta;
 
         camera.target = playerPos;
-
+        
         enemySpawnTimer += delta;
         if(enemySpawnTimer >= enemySpawnInterval)
         {
@@ -165,7 +174,7 @@ int main()
             e.texture = texEnemy;
             enemies.push_back(e);
         }
-
+        
         for(auto &e : enemies)
         {
             Vector2 d = { playerPos.x - e.pos.x,
@@ -183,7 +192,7 @@ int main()
                 playerInvincibilityTimer = hitCooldown;
             }
         }
-
+        
         for (int i = 0; i < xpOrbs.size(); )
         {
             float dx = playerPos.x - xpOrbs[i].pos.x;
@@ -197,45 +206,40 @@ int main()
                 playerXP += xpOrbValue;
                 xpOrbs.erase(xpOrbs.begin() + i);
             }
-            else
-            {
-                i++;
-            }
+            else i++;
         }
-
-        int oldLevel = playerLevel;
+        
+        xpToLevel = CalculateXPForLevel(playerLevel);
+        
         while(playerXP >= xpToLevel)
         {
             playerXP -= xpToLevel;
             playerLevel++;
-            xpToLevel *= 1.2f;
+            xpToLevel = CalculateXPForLevel(playerLevel);
 
             LevelUpText t;
             t.pos = { playerPos.x, playerPos.y - playerSize - 20 };
-            t.timer = 2.0f;
+            t.timer = levelUpDuration;
             levelUpTexts.push_back(t);
         }
 
         BeginDrawing();
         ClearBackground(BLACK);
-
         BeginMode2D(camera);
-
+        
         for(auto &tile : mapTiles)
             DrawTexturePro(tile.texture,
                 {0,0,(float)tile.texture.width,(float)tile.texture.height},
                 {tile.pos.x,tile.pos.y,tileSize,tileSize},
                 {0,0},0,WHITE);
-
+        
         float pScale = playerSize/texPlayer.width;
-
         Color drawColor = WHITE;
         if(playerInvincibilityTimer > 0)
         {
             int flashPhase = (int)(GetTime()*flashSpeed) % 2;
             drawColor = (flashPhase == 0) ? RED : WHITE;
         }
-
         DrawTexturePro(texPlayer,
             {0,0,(float)texPlayer.width,(float)texPlayer.height},
             {playerPos.x,playerPos.y,
@@ -244,27 +248,7 @@ int main()
             {texPlayer.width*pScale/2,
              texPlayer.height*pScale/2},
             0, drawColor);
-
-        if(playerHP < playerMaxHP)
-        {
-            float hpBarW = playerSize;
-            float hpBarH = 8;
-            Vector2 hpPos = { playerPos.x - hpBarW/2 - 2, playerPos.y - playerSize/2 - 10 + 2 };
-            DrawRectangle(hpPos.x, hpPos.y, hpBarW, hpBarH, RED);
-            DrawRectangle(hpPos.x, hpPos.y, hpBarW*(playerHP/playerMaxHP), hpBarH, GREEN);
-            DrawRectangleLines(hpPos.x, hpPos.y, hpBarW, hpBarH, WHITE);
-        }
-
-        for(auto &text : levelUpTexts)
-        {
-            DrawTextEx(gameFont, "LEVEL UP!", {text.pos.x - 50, text.pos.y}, 24, 1, YELLOW);
-            text.pos.y -= 30.0f * GetFrameTime();
-            text.timer -= GetFrameTime();
-        }
-        levelUpTexts.erase(std::remove_if(levelUpTexts.begin(), levelUpTexts.end(),
-                                          [](LevelUpText &t){ return t.timer <= 0; }),
-                           levelUpTexts.end());
-
+        
         for(auto &e : enemies)
         {
             float s = e.size/e.texture.width;
@@ -277,7 +261,7 @@ int main()
                  e.texture.height*s/2},
                 0,WHITE);
         }
-
+        
         for(auto &orb : xpOrbs)
         {
             float s = orb.size/orb.texture.width;
@@ -290,6 +274,26 @@ int main()
                  orb.texture.height*s/2},
                 0,WHITE);
         }
+        
+        if(playerHP < playerMaxHP)
+        {
+            float hpBarW = playerSize;
+            float hpBarH = 8;
+            Vector2 hpPos = { playerPos.x - hpBarW/2 - 2, playerPos.y - playerSize/2 - 10 + 2 };
+            DrawRectangle(hpPos.x, hpPos.y, hpBarW, hpBarH, RED);
+            DrawRectangle(hpPos.x, hpPos.y, hpBarW*(playerHP/playerMaxHP), hpBarH, GREEN);
+            DrawRectangleLines(hpPos.x, hpPos.y, hpBarW, hpBarH, WHITE);
+        }
+        
+        for(auto &text : levelUpTexts)
+        {
+            DrawTextEx(gameFont, "LEVEL UP!", {text.pos.x - 50, text.pos.y}, 24, 1, YELLOW);
+            text.pos.y -= 30.0f * GetFrameTime();
+            text.timer -= GetFrameTime();
+        }
+        levelUpTexts.erase(std::remove_if(levelUpTexts.begin(), levelUpTexts.end(),
+            [](LevelUpText &t){ return t.timer <= 0; }),
+            levelUpTexts.end());
 
         EndMode2D();
         
@@ -326,7 +330,7 @@ int main()
         DrawTextOutlined(gameFont,std::to_string(totalKills),
             {25+skullSize+10,92},
             28,1,WHITE);
-
+        
         debugMenu.Draw(screenWidth,screenHeight,
                        playerSpeed,
                        playerSize,
@@ -350,6 +354,22 @@ int main()
                        playerHP,
                        playerMaxHP);
 
+        if(playerLevel > previousLevel)
+        {
+            for(int i = previousLevel; i < playerLevel; i++)
+            {
+                LevelUpText t;
+                t.pos = { playerPos.x, playerPos.y - playerSize - 20 };
+                t.timer = levelUpDuration;
+                levelUpTexts.push_back(t);
+            }
+        }
+
+        if(playerLevel < previousLevel)
+        {
+            playerXP = 0;
+        }
+        
         if(killAllEnemiesFlag)
         {
             totalKills += enemies.size();
@@ -358,7 +378,7 @@ int main()
             {
                 XPOrb orb;
                 orb.pos = e.pos;
-                orb.size = enemySize * 0.7f; 
+                orb.size = enemySize * 0.7f;
                 orb.texture = texXP;
                 xpOrbs.push_back(orb);
             }
