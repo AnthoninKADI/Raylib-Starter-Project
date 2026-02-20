@@ -56,8 +56,8 @@ bool showSpawnRadius     = false;
 std::vector<XPOrb> xpOrbs;
 
 std::vector<Projectile> projectiles;
-float projectileSpeed = 800.0f;
-float projectileCooldown = 0.3f;
+float projectileSpeed = 400.0f;
+float projectileCooldown = 1.5f;
 float projectileTimer = 0.0f;
 
 struct Tile { Vector2 pos; Texture2D texture; };
