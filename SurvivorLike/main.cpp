@@ -2,6 +2,7 @@
 #include "rlImGui.h"
 #include "imgui.h"
 #include "DebugMenu.h"
+#include "MainMenu.h"
 #include "Entities.h"
 #include <vector>
 #include <cmath>
@@ -134,6 +135,9 @@ int main()
     InitWindow(screenWidth, screenHeight,"Vampire Survivor Base");
     SetTargetFPS(60);
     rlImGuiSetup(true);
+    
+    MainMenu mainMenu((float)screenWidth, (float)screenHeight);
+    bool inGame = false;
 
     Font gameFont = LoadFontEx("assets/font/Nordhin.ttf",64,0,0);
     SetTextureFilter(gameFont.texture,TEXTURE_FILTER_BILINEAR);
@@ -163,6 +167,30 @@ int main()
 
     while(!WindowShouldClose())
     {
+        if(!inGame)
+        {
+            mainMenu.Update();
+
+            if(mainMenu.ShouldStartGame())
+            {
+                inGame = true;
+                mainMenu.ResetFlags();
+                ResetGame();
+            }
+
+            if(mainMenu.ShouldQuit())
+            {
+                CloseWindow();
+                return 0;
+            }
+
+            BeginDrawing();
+            ClearBackground(BLACK);
+            mainMenu.Draw();
+            EndDrawing();
+            continue;
+        }
+
         float delta = GetFrameTime();
         gameTime += delta;
         projectileTimer += delta;
