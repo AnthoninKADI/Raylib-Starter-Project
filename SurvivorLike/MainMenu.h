@@ -1,5 +1,7 @@
 #pragma once
 #include "raylib.h"
+#include <vector>
+#include <string>
 
 enum class MenuState
 {
@@ -7,6 +9,19 @@ enum class MenuState
     Options,
     Characters,
     None
+};
+
+enum class AimMode
+{
+    ClosestEnemy,
+    MousePosition
+};
+
+struct CharacterData
+{
+    std::string name;
+    std::string description;
+    Color color;
 };
 
 class MainMenu
@@ -21,6 +36,12 @@ public:
     bool ShouldQuit() const;
 
     void ResetFlags();
+
+    int GetSelectedCharacter() const;
+    
+    bool fullscreen;
+    float mouseSensitivity;
+    AimMode aimMode;
 
 private:
     float screenWidth;
@@ -37,6 +58,12 @@ private:
     Rectangle quitButton;
 
     Rectangle backButton;
+
+    std::vector<CharacterData> characters;
+    int selectedCharacter;
+
+    float scrollOffset;
+    float contentHeight;
 
     void DrawButton(Rectangle rect, const char* text);
     bool ButtonLogic(Rectangle rect);
