@@ -17,6 +17,10 @@ enum class AimMode
     MousePosition
 };
 
+struct Particle {
+    float x, y, size, speed;
+};
+
 struct CharacterData
 {
     std::string name;
@@ -46,12 +50,16 @@ public:
 private:
     float screenWidth;
     float screenHeight;
+    float titlePulse;
+    float backgroundTime;
+    float fadeAlpha;
 
     MenuState state;
-
+    std::vector<Particle> particles;
+    
     bool startGame;
     bool quitGame;
-
+    
     Rectangle playButton;
     Rectangle charactersButton;
     Rectangle optionsButton;
