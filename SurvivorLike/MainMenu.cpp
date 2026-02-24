@@ -1,8 +1,15 @@
 #include "MainMenu.h"
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>  // pour rand()
-#include <ctime>    // pour srand()
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+struct Particle {
+    float x, y;
+    float speed;
+    float size;
+};
 
 MainMenu::MainMenu(float sw, float sh)
 {
@@ -38,21 +45,21 @@ MainMenu::MainMenu(float sw, float sh)
     selectedCharacter = 0;
     scrollOffset = 0.0f;
     contentHeight = 0.0f;
+
     fullscreen = false;
     mouseSensitivity = 1.0f;
     aimMode = AimMode::ClosestEnemy;
-    titlePulse = 0.0f;
-    backgroundTime = 0.0f;
-    fadeAlpha = 0.0f;
 
-    // Initialiser particules
-    srand((unsigned int)time(0));
-    for (int i = 0; i < 80; i++) {
+    titlePulse = 0.0f;
+
+    srand((unsigned int)time(NULL));
+
+    for(int i=0;i<80;i++){
         Particle p;
-        p.x = (float)(rand() % (int)screenWidth);
-        p.y = (float)(rand() % (int)screenHeight);
-        p.size = 1.0f + (rand() % 3);
-        p.speed = 10.0f + (rand() % 20);
+        p.x = rand()%((int)screenWidth);
+        p.y = rand()%((int)screenHeight);
+        p.speed = 20 + rand()%40;
+        p.size = 1 + rand()%3;
         particles.push_back(p);
     }
 }
@@ -60,163 +67,173 @@ MainMenu::MainMenu(float sw, float sh)
 void MainMenu::Update()
 {
     float dt = GetFrameTime();
-    fadeAlpha += dt;
-    if (fadeAlpha > 1.0f) fadeAlpha = 1.0f;
+    titlePulse += dt * 3.0f;
 
-    backgroundTime += dt;
-    titlePulse += GetFrameTime() * 5.0f; 
-
-    // Mise à jour particules
-    for (auto &p : particles) {
+    for(auto &p : particles){
         p.y += p.speed * dt;
-        if (p.y > screenHeight) {
+        if(p.y > screenHeight){
             p.y = 0;
-            p.x = (float)(rand() % (int)screenWidth);
+            p.x = rand()%((int)screenWidth);
         }
     }
 
-    // Menu logic
-    if (state == MenuState::Main) {
-        if (ButtonLogic(playButton)) startGame = true;
-        if (ButtonLogic(charactersButton)) state = MenuState::Characters;
-        if (ButtonLogic(optionsButton)) state = MenuState::Options;
-        if (ButtonLogic(quitButton)) quitGame = true;
-    } 
-    else if (state == MenuState::Characters) {
-        if (CheckCollisionPointRec(GetMousePosition(), backButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if(state == MenuState::Main){
+        if(ButtonLogic(playButton)) startGame = true;
+        if(ButtonLogic(charactersButton)) state = MenuState::Characters;
+        if(ButtonLogic(optionsButton)) state = MenuState::Options;
+        if(ButtonLogic(quitButton)) quitGame = true;
+    }
+    else if(state == MenuState::Characters)
+    {
+        if(CheckCollisionPointRec(GetMousePosition(), backButton)
+           && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             state = MenuState::Main;
 
         float wheel = GetMouseWheelMove();
-        scrollOffset -= wheel * 40.0f;
+        scrollOffset += -wheel * 40.0f;
 
-        int columns = 4;
-        float spacing = 30;
-        float cardHeight = 220;
-        int rows = (characters.size() + columns - 1) / columns;
-        contentHeight = rows * (cardHeight + spacing);
+        float cardHeight = 120;
+        float spacing = 25;
+        
+        contentHeight = characters.size() * cardHeight
+                      + (characters.size() - 1) * spacing;
+        
+        float panelHeight = screenHeight - 160;  
+        float visibleHeight = panelHeight - 130; 
+
+        float maxScroll = contentHeight - visibleHeight;
+        if(maxScroll < 0) maxScroll = 0;
 
         if(scrollOffset < 0) scrollOffset = 0;
-        if(scrollOffset > contentHeight - screenHeight + 120.0f)
-            scrollOffset = contentHeight - screenHeight + 120.0f;
-    } 
-    else {
-        if (CheckCollisionPointRec(GetMousePosition(), backButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if(scrollOffset > maxScroll) scrollOffset = maxScroll;
+    }
+    else{
+        if(CheckCollisionPointRec(GetMousePosition(), backButton)
+           && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             state = MenuState::Main;
     }
 }
 
 void MainMenu::Draw()
 {
-    // ===== BACKGROUND NUIT + PARTICULES =====
-    for (int y = 0; y < screenHeight; y++) {
-        float t = (float)y / screenHeight;
+    for(int y=0;y<screenHeight;y++){
+        float t = (float)y/screenHeight;
         Color col = {
-            (unsigned char)(15 + 15*t),
-            (unsigned char)(15 + 15*t),
-            (unsigned char)(40 + 40*t),
+            (unsigned char)(10 + 20*t),
+            (unsigned char)(10 + 20*t),
+            (unsigned char)(30 + 60*t),
             255
         };
-        DrawLine(0, y, screenWidth, y, col);
+        DrawLine(0,y,screenWidth,y,col);
     }
 
-    for (auto &p : particles) {
-        DrawCircle(p.x, p.y, p.size, Color{200,200,255,150});
+    for(auto &p : particles){
+        DrawCircle(p.x,p.y,p.size,Color{200,200,255,150});
     }
+    
+    if(state == MenuState::Main){
 
-    // ===== MAIN MENU =====
-    if (state == MenuState::Main) {
         const char* title = "VAMPIRE SURVIVOR";
-        float pulse = 1.0f + 0.05f * sin(titlePulse); // pulse 5% autour de 1.0
+        float pulse = 1.0f + 0.05f * sin(titlePulse);
         int fontSize = (int)(80 * pulse);
-        int textWidth = MeasureText(title, fontSize);
-        DrawText(title, screenWidth/2 - textWidth/2, 140, fontSize, WHITE);
-        int centerX = screenWidth / 2 - textWidth / 2;
+        int textWidth = MeasureText(title,fontSize);
 
-        DrawText(title, centerX, 140, fontSize, WHITE);
+        DrawText(title,
+                 screenWidth/2 - textWidth/2,
+                 140,
+                 fontSize,
+                 WHITE);
 
-        auto DrawFancyButton = [&](Rectangle rect, const char* text) {
-            bool hover = CheckCollisionPointRec(GetMousePosition(), rect);
-            float scale = hover ? 1.08f : 1.0f;
+        DrawFancyButton(playButton,"Play");
+        DrawFancyButton(charactersButton,"Characters");
+        DrawFancyButton(optionsButton,"Options");
+        DrawFancyButton(quitButton,"Quit");
+    }
 
-            Rectangle scaled = {
-                rect.x - (rect.width*(scale-1)/2),
-                rect.y - (rect.height*(scale-1)/2),
-                rect.width*scale,
-                rect.height*scale
-            };
+    else if(state == MenuState::Characters)
+{
+    Rectangle panel = {80,80,screenWidth-160,screenHeight-160};
 
-            DrawRectangleRounded(scaled, 0.3f, 8, hover ? Color{60,60,90,255} : Color{40,40,60,255});
-            if (hover)
-                DrawRectangleRoundedLines(scaled, 0.3f, 8, WHITE);
+    DrawRectangleRounded(panel,0.02f,8,Color{25,25,35,240});
+    DrawRectangleRoundedLines(panel,0.02f,8,Color{80,80,120,255});
+        
+    DrawRectangleRec(backButton,DARKGRAY);
+    if(CheckCollisionPointRec(GetMousePosition(),backButton))
+        DrawRectangleLinesEx(backButton,3,WHITE);
+    DrawText("<",backButton.x+12,backButton.y+5,30,WHITE);
 
-            int fontSize = 30;
-            int textWidth = MeasureText(text, fontSize);
-            DrawText(text, scaled.x + scaled.width/2 - textWidth/2,
-                     scaled.y + scaled.height/2 - fontSize/2, fontSize, WHITE);
+    DrawText("Choose Your Character",
+             panel.x+40,
+             panel.y+30,
+             35,
+             WHITE);
+
+    Rectangle scrollArea = {
+        panel.x+40,
+        panel.y+90,
+        panel.width-80,
+        panel.height-130
+    };
+
+    BeginScissorMode(
+        (int)scrollArea.x,
+        (int)scrollArea.y,
+        (int)scrollArea.width,
+        (int)scrollArea.height
+    );
+
+    float startX = scrollArea.x + 20;
+    float startY = scrollArea.y - scrollOffset;
+    float cardWidth = scrollArea.width - 40;
+    float cardHeight = 120;
+    float spacing = 25;
+
+    for(int i=0;i<characters.size();i++)
+    {
+        Rectangle card = {
+            startX,
+            startY + i*(cardHeight+spacing),
+            cardWidth,
+            cardHeight
         };
 
-        DrawFancyButton(playButton, "Play");
-        DrawFancyButton(charactersButton, "Characters");
-        DrawFancyButton(optionsButton, "Options");
-        DrawFancyButton(quitButton, "Quit");
+        bool hover = CheckCollisionPointRec(GetMousePosition(),card);
+
+        Color bg = Color{35,35,50,255};
+        if(i==selectedCharacter)
+            bg = Color{70,120,200,255};
+        else if(hover)
+            bg = Color{55,55,80,255};
+
+        DrawRectangleRounded(card,0.15f,10,bg);
+
+        if(i==selectedCharacter)
+            DrawRectangleRoundedLines(card,0.15f,10,YELLOW);
+        else if(hover)
+            DrawRectangleRoundedLines(card,0.15f,10,LIGHTGRAY);
+
+        Rectangle avatar = {card.x+20,card.y+20,80,80};
+        DrawRectangleRounded(avatar,0.3f,8,characters[i].color);
+
+        DrawText(characters[i].name.c_str(),
+                 card.x+120,
+                 card.y+25,
+                 24,
+                 WHITE);
+
+        DrawText(characters[i].description.c_str(),
+                 card.x+120,
+                 card.y+60,
+                 18,
+                 LIGHTGRAY);
+
+        if(hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            selectedCharacter = i;
     }
 
-    // ===== CHARACTERS MENU =====
-    else if (state == MenuState::Characters) {
-        DrawRectangleRec(backButton, DARKGRAY);
-        if(CheckCollisionPointRec(GetMousePosition(), backButton))
-            DrawRectangleLinesEx(backButton, 3, WHITE);
-        DrawText("<", backButton.x + 12, backButton.y + 5, 30, WHITE);
+    EndScissorMode();
+}
 
-        int columns = 4;
-        float spacing = 30;
-        float cardWidth = (screenWidth - 200 - spacing*(columns-1))/columns;
-        float cardHeight = 220;
-        float startX = 100;
-        float startY = 120 - scrollOffset;
-
-        for (int i = 0; i < characters.size(); i++) {
-            int row = i / columns;
-            int col = i % columns;
-
-            Rectangle card = {
-                startX + col*(cardWidth+spacing),
-                startY + row*(cardHeight+spacing),
-                cardWidth,
-                cardHeight
-            };
-
-            if(card.y + card.height < 0 || card.y > screenHeight) continue;
-
-            DrawRectangleRec(card, DARKGRAY);
-            bool hover = CheckCollisionPointRec(GetMousePosition(), card);
-            if(hover) DrawRectangleLinesEx(card, 2, LIGHTGRAY);
-            if(i == selectedCharacter) DrawRectangleLinesEx(card, 4, YELLOW);
-
-            Rectangle imageRect = { card.x+20, card.y+20, card.width-40, 100 };
-            DrawRectangleRec(imageRect, characters[i].color);
-
-            int nameSize = 20;
-            int nameWidth = MeasureText(characters[i].name.c_str(), nameSize);
-            DrawText(characters[i].name.c_str(),
-                     card.x + card.width/2 - nameWidth/2,
-                     card.y + 130,
-                     nameSize,
-                     WHITE);
-
-            int descSize = 16;
-            DrawText(characters[i].description.c_str(),
-                     card.x + 20,
-                     card.y + 160,
-                     descSize,
-                     GRAY);
-
-            if(hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                selectedCharacter = i;
-        }
-    }
-
-    // ===== OPTIONS MENU =====
     else if (state == MenuState::Options) {
         DrawRectangleRec(backButton, DARKGRAY);
         if(CheckCollisionPointRec(GetMousePosition(), backButton))
@@ -231,7 +248,6 @@ void MainMenu::Draw()
         float baseY = panel.y + 80;
         DrawText("Settings", baseX, panel.y+30, 40, WHITE);
 
-        // Fullscreen toggle
         Rectangle toggle = { baseX, baseY, 70, 30 };
         DrawText("Fullscreen", toggle.x + 110, toggle.y + 5, 20, WHITE);
         DrawRectangleRounded(toggle, 1.0f, 10, fullscreen ? GREEN : DARKGRAY);
@@ -241,8 +257,7 @@ void MainMenu::Draw()
             fullscreen = !fullscreen;
             ToggleFullscreen();
         }
-
-        // Mouse sensitivity
+        
         Rectangle sensBar = { baseX, baseY+100, 350, 8 };
         DrawText("Mouse Sensitivity", sensBar.x, sensBar.y-30, 20, WHITE);
         DrawRectangleRounded(sensBar, 1.0f, 10, DARKGRAY);
@@ -255,8 +270,7 @@ void MainMenu::Draw()
             if(mouseSensitivity<0.1f) mouseSensitivity=0.1f;
             if(mouseSensitivity>5.0f) mouseSensitivity=5.0f;
         }
-
-        // AimMode dropdown
+        
         const char* aimModes[] = {"Closest Enemy","Mouse Position"};
         static bool dropdownOpen=false;
         Rectangle dropdownRect = { baseX, baseY+190, 260, 40 };
@@ -286,11 +300,41 @@ void MainMenu::Draw()
     }
 }
 
-bool MainMenu::ShouldStartGame() const { return startGame; }
-bool MainMenu::ShouldQuit() const { return quitGame; }
-void MainMenu::ResetFlags() { startGame=false; }
-int MainMenu::GetSelectedCharacter() const { return selectedCharacter; }
+void MainMenu::DrawFancyButton(Rectangle rect,const char* text)
+{
+    bool hover = CheckCollisionPointRec(GetMousePosition(),rect);
+    float scale = hover ? 1.08f : 1.0f;
+
+    Rectangle scaled = {
+        rect.x - (rect.width*(scale-1)/2),
+        rect.y - (rect.height*(scale-1)/2),
+        rect.width*scale,
+        rect.height*scale
+    };
+
+    DrawRectangleRounded(scaled,0.3f,8,
+        hover?Color{60,60,90,255}:Color{40,40,60,255});
+
+    if(hover)
+        DrawRectangleRoundedLines(scaled,0.3f,8,WHITE);
+
+    int fontSize=30;
+    int textWidth=MeasureText(text,fontSize);
+
+    DrawText(text,
+        scaled.x+scaled.width/2-textWidth/2,
+        scaled.y+scaled.height/2-fontSize/2,
+        fontSize,
+        WHITE);
+}
+
 bool MainMenu::ButtonLogic(Rectangle rect)
 {
-    return CheckCollisionPointRec(GetMousePosition(),rect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    return CheckCollisionPointRec(GetMousePosition(),rect)
+        && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
+
+bool MainMenu::ShouldStartGame() const { return startGame; }
+bool MainMenu::ShouldQuit() const { return quitGame; }
+void MainMenu::ResetFlags(){ startGame=false; }
+int MainMenu::GetSelectedCharacter() const { return selectedCharacter; }

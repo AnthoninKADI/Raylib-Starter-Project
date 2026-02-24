@@ -3,76 +3,78 @@
 #include <vector>
 #include <string>
 
-enum class MenuState
-{
-    Main,
-    Options,
-    Characters,
-    None
-};
-
-enum class AimMode
-{
-    ClosestEnemy,
-    MousePosition
-};
-
-struct Particle {
-    float x, y, size, speed;
-};
-
-struct CharacterData
-{
-    std::string name;
-    std::string description;
-    Color color;
-};
-
 class MainMenu
 {
 public:
-    MainMenu(float screenWidth, float screenHeight);
+
+    enum class MenuState {
+        Main,
+        Characters,
+        Options
+    };
+
+    enum class AimMode {
+        ClosestEnemy,
+        MousePosition
+    };
+
+    MainMenu(float sw, float sh);
 
     void Update();
     void Draw();
 
     bool ShouldStartGame() const;
     bool ShouldQuit() const;
-
     void ResetFlags();
 
     int GetSelectedCharacter() const;
-    
-    bool fullscreen;
-    float mouseSensitivity;
-    AimMode aimMode;
 
 private:
+
+    struct Character {
+        std::string name;
+        std::string description;
+        Color color;
+    };
+
+    struct Particle {
+        float x;
+        float y;
+        float speed;
+        float size;
+    };
+
+    void DrawFancyButton(Rectangle rect, const char* text);
+    bool ButtonLogic(Rectangle rect);
+
+    // ===== SCREEN =====
     float screenWidth;
     float screenHeight;
-    float titlePulse;
-    float backgroundTime;
-    float fadeAlpha;
 
+    // ===== STATE =====
     MenuState state;
-    std::vector<Particle> particles;
-    
     bool startGame;
     bool quitGame;
-    
+
+    // ===== BUTTONS =====
     Rectangle playButton;
     Rectangle charactersButton;
     Rectangle optionsButton;
     Rectangle quitButton;
-
     Rectangle backButton;
 
-    std::vector<CharacterData> characters;
+    // ===== CHARACTERS =====
+    std::vector<Character> characters;
     int selectedCharacter;
-
     float scrollOffset;
     float contentHeight;
 
-    void DrawButton(Rectangle rect, const char* text);
-    bool ButtonLogic(Rectangle rect);
+    // ===== OPTIONS =====
+    bool fullscreen;
+    float mouseSensitivity;
+    AimMode aimMode;
+
+    // ===== VISUAL EFFECTS =====
+    float titlePulse;
+    std::vector<Particle> particles;
 };
