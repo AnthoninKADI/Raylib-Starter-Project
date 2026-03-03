@@ -18,6 +18,7 @@ const int mapWidth  = 200;
 const int mapHeight = 200;
 
 Vector2 playerPos;
+PlayerStats playerStats;
 float playerSpeed = 400.0f;
 float playerSize  = 80.0f;
 int playerLevel   = 1;
@@ -112,6 +113,15 @@ void ResetGame()
     projectileTimer = 0.0f;      
     gameTime = 0.0f;             
     levelUpTexts.clear();        
+
+    playerStats.moveSpeed          = playerSpeed;
+    playerStats.lifeSteal          = 0.0f;
+    playerStats.damage             = 1.0f;
+    playerStats.projectileCooldown = projectileCooldown;
+    playerStats.maxHP              = playerMaxHP;
+    playerStats.projectileCount    = 1;
+    playerStats.effectDuration     = 0.0f;
+    playerStats.projectilePierce   = 1; 
 }
 
 
@@ -318,6 +328,7 @@ int main()
                     p.active = true;
                     p.range = 1000.0f;
                     p.travelled = 0.0f;
+                    p.pierceCount = 0; 
                     projectiles.push_back(p);
                 }
             }
@@ -350,7 +361,11 @@ int main()
                     totalKills++;
 
                     enemies.erase(enemies.begin()+j);
-                    projectiles[i].active = false;
+
+                    projectiles[i].pierceCount++;
+                    if(projectiles[i].pierceCount >= playerStats.projectilePierce)
+                        projectiles[i].active = false;
+
                     break;
                 }
             }

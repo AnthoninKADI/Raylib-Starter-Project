@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include <vector>
 
 struct Enemy
 {
@@ -23,7 +24,19 @@ struct Projectile
     Vector2 dir;
     float speed;
     bool active;
-    float range;      
-    float travelled;  
+    float range;
+    float travelled;
+    int pierceCount; 
 };
 
+struct PlayerStats
+{
+    float moveSpeed;
+    float lifeSteal;
+    float damage;
+    float projectileCooldown;
+    float maxHP;
+    int projectileCount;
+    float effectDuration;
+    int projectilePierce; 
+};

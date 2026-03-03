@@ -3,7 +3,6 @@
 tir qui transperse 
 knockback 
 tir enflammé 
-armure ronciere 
 trainer derriere soi 
 ricochet 
 shotgun 
@@ -12,13 +11,10 @@ aura / bloquer
 
 vol de vie 
 speed 
-range
 damage 
-armor 
 duration 
 cd 
 max hp 
-crit % 
 multi shot 
 
 heal
@@ -26,3 +22,6 @@ magnet
 kill all
 upgrade ?
 slowmotion
+
+
+
