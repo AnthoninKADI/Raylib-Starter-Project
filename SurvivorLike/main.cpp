@@ -20,7 +20,7 @@ const int mapHeight = 200;
 Vector2 playerPos;
 PlayerStats playerStats;
 float playerSpeed = 400.0f;
-float playerSize  = 80.0f;
+float playerSize  = 120.0f;
 int playerLevel   = 1;
 float playerXP    = 0;
 float xpToLevel   = 20.0f + pow(playerLevel,2.0f)*12.0f;
@@ -186,6 +186,22 @@ int main()
                 inGame = true;
                 mainMenu.ResetFlags();
                 ResetGame();
+
+                MainMenu::Stats selStats = mainMenu.GetSelectedStats();
+                playerStats.moveSpeed        = selStats.speed;
+                playerStats.lifeSteal        = selStats.lifesteal;
+                playerStats.damage           = selStats.damage;
+                playerStats.projectileCooldown = selStats.attackCooldown;
+                playerStats.maxHP            = selStats.maxHP;
+                playerStats.projectileCount  = selStats.shots;
+                playerStats.effectDuration   = selStats.effectDuration;
+                playerStats.projectilePierce = selStats.enemiesPierced;
+
+                playerSpeed   = playerStats.moveSpeed;
+                playerMaxHP   = playerStats.maxHP;
+                playerHP      = playerStats.maxHP;
+                projectileCooldown = playerStats.projectileCooldown;
+                texPlayer     = mainMenu.GetSelectedTexture();
             }
 
             if(mainMenu.ShouldQuit())
@@ -228,7 +244,7 @@ int main()
         {
             enemySpawnTimer = 0.0f;
 
-            if(!spawnOnClick) // spawn automatique seulement si spawnOnClick n'est pas actif
+            if(!spawnOnClick) 
             {
                 float angle = GetRandomValue(0,359) * DEG2RAD;
                 Enemy e;
@@ -240,8 +256,7 @@ int main()
                 enemies.push_back(e);
             }
         }
-
-        // spawn au clic indépendant du timer
+        
         if(spawnOnClick && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
             Enemy e;
@@ -401,7 +416,7 @@ int main()
 
         if(playerHP < playerMaxHP)
         {
-            float hpBarW = playerSize;
+            float hpBarW = 80;
             float hpBarH = 8;
             Vector2 hpPos = { playerPos.x - hpBarW/2 - 2, playerPos.y - playerSize/2 - 10 + 2 };
             DrawRectangle(hpPos.x, hpPos.y, hpBarW, hpBarH, RED);
