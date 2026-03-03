@@ -18,6 +18,17 @@ public:
         MousePosition
     };
 
+    struct Stats {
+        float speed;
+        float lifesteal;
+        float damage;
+        float attackCooldown;
+        float maxHP;
+        int shots;
+        float effectDuration;
+        int enemiesPierced;
+    };
+
     MainMenu(float sw, float sh);
 
     void Update();
@@ -28,13 +39,18 @@ public:
     void ResetFlags();
 
     int GetSelectedCharacter() const;
+    const Stats& GetSelectedStats() const;
+    Texture2D GetSelectedTexture() const;
+    const std::string& GetSelectedTitle() const;
+    const std::string& GetSelectedDescription() const;
 
 private:
 
     struct Character {
         std::string name;
         std::string description;
-        Color color;
+        Texture2D texture;
+        Stats stats;
     };
 
     struct Particle {
@@ -47,34 +63,28 @@ private:
     void DrawFancyButton(Rectangle rect, const char* text);
     bool ButtonLogic(Rectangle rect);
 
-    // ===== SCREEN =====
     float screenWidth;
     float screenHeight;
 
-    // ===== STATE =====
     MenuState state;
     bool startGame;
     bool quitGame;
 
-    // ===== BUTTONS =====
     Rectangle playButton;
     Rectangle charactersButton;
     Rectangle optionsButton;
     Rectangle quitButton;
     Rectangle backButton;
 
-    // ===== CHARACTERS =====
     std::vector<Character> characters;
     int selectedCharacter;
     float scrollOffset;
     float contentHeight;
 
-    // ===== OPTIONS =====
     bool fullscreen;
     float mouseSensitivity;
     AimMode aimMode;
 
-    // ===== VISUAL EFFECTS =====
     float titlePulse;
     std::vector<Particle> particles;
 };
