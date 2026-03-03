@@ -9,6 +9,7 @@ shotgun
 eclair 
 aura / bloquer 
 
+//////////////////////////// 
 vol de vie 
 speed 
 damage 
@@ -16,6 +17,7 @@ duration
 cd 
 max hp 
 multi shot 
+////////////////////////////
 
 heal
 magnet
