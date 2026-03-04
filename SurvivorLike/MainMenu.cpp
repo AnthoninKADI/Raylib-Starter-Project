@@ -287,6 +287,11 @@ bool MainMenu::ButtonLogic(Rectangle rect)
         && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
+MainMenu::AimMode MainMenu::GetAimMode() const
+{
+    return aimMode;
+}
+
 bool MainMenu::ShouldStartGame() const { return startGame; }
 bool MainMenu::ShouldQuit() const { return quitGame; }
 void MainMenu::ResetFlags(){ startGame=false; }

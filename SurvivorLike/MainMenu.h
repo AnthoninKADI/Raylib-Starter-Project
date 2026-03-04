@@ -87,4 +87,7 @@ private:
 
     float titlePulse;
     std::vector<Particle> particles;
+    
+public:
+    AimMode GetAimMode() const;
 };

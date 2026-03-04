@@ -148,6 +148,7 @@ int main()
     
     MainMenu mainMenu((float)screenWidth, (float)screenHeight);
     bool inGame = false;
+    MainMenu::AimMode currentAimMode = MainMenu::AimMode::ClosestEnemy;
 
     Font gameFont = LoadFontEx("assets/font/Nordhin.ttf",64,0,0);
     SetTextureFilter(gameFont.texture,TEXTURE_FILTER_BILINEAR);
@@ -202,6 +203,7 @@ int main()
                 playerHP      = playerStats.maxHP;
                 projectileCooldown = playerStats.projectileCooldown;
                 texPlayer     = mainMenu.GetSelectedTexture();
+                currentAimMode = mainMenu.GetAimMode();
             }
 
             if(mainMenu.ShouldQuit())
@@ -318,32 +320,55 @@ int main()
         if(projectileTimer >= projectileCooldown)
         {
             projectileTimer = 0.0f;
-            if(!enemies.empty())
+
+            Vector2 shootDir = {0,0};
+            bool canShoot = false;
+
+            if(currentAimMode == MainMenu::AimMode::ClosestEnemy)
             {
-                Enemy* closest = nullptr;
-                float minDist = 999999.0f;
-                for(auto &e : enemies)
+                if(!enemies.empty())
                 {
-                    float d = Distance(playerPos,e.pos);
-                    if(d < minDist)
+                    Enemy* closest = nullptr;
+                    float minDist = 999999.0f;
+                    for(auto &e : enemies)
                     {
-                        minDist = d;
-                        closest = &e;
+                        float d = Distance(playerPos,e.pos);
+                        if(d < minDist)
+                        {
+                            minDist = d;
+                            closest = &e;
+                        }
+                    }
+                    if(closest)
+                    {
+                        shootDir = {closest->pos.x - playerPos.x, closest->pos.y - playerPos.y};
+                        canShoot = true;
                     }
                 }
-                if(closest)
+            }
+            else if(currentAimMode == MainMenu::AimMode::MousePosition)
+            {
+                Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), camera);
+                shootDir = {mouseWorld.x - playerPos.x, mouseWorld.y - playerPos.y};
+                canShoot = true;
+            }
+
+            if(canShoot)
+            {
+                float len = sqrt(shootDir.x*shootDir.x + shootDir.y*shootDir.y);
+                if(len>0)
                 {
+                    shootDir.x/=len;
+                    shootDir.y/=len;
+
                     Projectile p;
                     p.pos = playerPos;
-                    Vector2 dir = {closest->pos.x - playerPos.x, closest->pos.y - playerPos.y};
-                    float len = sqrt(dir.x*dir.x + dir.y*dir.y);
-                    if(len>0){ dir.x/=len; dir.y/=len; }
-                    p.dir = dir;
+                    p.dir = shootDir;
                     p.speed = projectileSpeed;
                     p.active = true;
                     p.range = 1000.0f;
                     p.travelled = 0.0f;
-                    p.pierceCount = 0; 
+                    p.pierceCount = 0;
                     projectiles.push_back(p);
                 }
             }
