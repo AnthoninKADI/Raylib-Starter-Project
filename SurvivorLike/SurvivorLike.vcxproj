@@ -141,6 +141,7 @@
     <ClInclude Include="dependencies\include\rlImGuiColors.h" />
     <ClInclude Include="Entities.h" />
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="PauseMenu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DebugMenu.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="PauseMenu.cpp" />
     <ClCompile Include="rlImGui.cpp" />
   </ItemGroup>
   <ItemGroup>

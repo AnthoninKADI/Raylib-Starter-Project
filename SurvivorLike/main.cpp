@@ -2,6 +2,7 @@
 #include "rlImGui.h"
 #include "imgui.h"
 #include "DebugMenu.h"
+#include "PauseMenu.h"
 #include "MainMenu.h"
 #include "Entities.h"
 #include <vector>
@@ -67,6 +68,8 @@ std::vector<Tile> mapTiles;
 
 float gameTime = 0.0f;
 bool killAllEnemiesFlag = false;
+
+void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings, bool &fullscreen, float &mouseSensitivity, MainMenu::AimMode &aimMode);
 
 std::string FormatTime(float seconds)
 {
@@ -144,10 +147,16 @@ int main()
 {
     InitWindow(screenWidth, screenHeight,"Vampire Survivor Base");
     SetTargetFPS(60);
+    SetExitKey(KEY_NULL);
     rlImGuiSetup(true);
     
     MainMenu mainMenu((float)screenWidth, (float)screenHeight);
+    PauseMenu pauseMenu((float)screenWidth, (float)screenHeight);
     bool inGame = false;
+    bool paused = false;
+    bool showSettings = false;
+    bool fullscreen = false;
+    float mouseSensitivity = 1.0f;
     MainMenu::AimMode currentAimMode = MainMenu::AimMode::ClosestEnemy;
 
     Font gameFont = LoadFontEx("assets/font/Nordhin.ttf",64,0,0);
@@ -215,6 +224,43 @@ int main()
             BeginDrawing();
             ClearBackground(BLACK);
             mainMenu.Draw();
+            EndDrawing();
+            continue;
+        }
+
+        if(IsKeyPressed(KEY_ESCAPE))
+            pauseMenu.Toggle();
+
+        if(pauseMenu.IsPaused())
+        {
+            if(!showSettings)
+            {
+                pauseMenu.Update();
+
+                if(pauseMenu.ResumeRequested())
+                    pauseMenu.Toggle();
+
+                if(pauseMenu.SettingsRequested())
+                {
+                    showSettings = true;
+                    pauseMenu.ClearSettingsRequest();
+                }
+
+                if(pauseMenu.BackToMenuRequested())
+                {
+                    inGame = false;
+                    pauseMenu.Toggle();
+                }
+            }
+
+            BeginDrawing();
+            ClearBackground(BLACK);
+
+            pauseMenu.Draw();
+
+            if(showSettings)
+                DrawSettingsMenu(screenWidth, screenHeight, showSettings, fullscreen, mouseSensitivity, currentAimMode);
+
             EndDrawing();
             continue;
         }
