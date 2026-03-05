@@ -1,10 +1,11 @@
 ﻿#include "UpgradeMenu.h"
 #include "raylib.h"
+#include <string>
 
-UpgradeMenu::UpgradeMenu(float sw, float sh)
+UpgradeMenu::UpgradeMenu(float screenW, float screenH)
 {
-    screenWidth = sw;
-    screenHeight = sh;
+    screenWidth = screenW;
+    screenHeight = screenH;
     active = false;
 }
 
@@ -16,49 +17,99 @@ void UpgradeMenu::Show(const std::vector<UpgradeOption>& options)
 
 void UpgradeMenu::Update(PlayerStats& player)
 {
-    if(!active) return;
+    if (!active) return;
 
-    float cardWidth = 300;
-    float cardHeight = 200;
+    Vector2 mouse = GetMousePosition();
+    int cardCount = (int)currentOptions.size();
+    float cardW = 300;
+    float cardH = 150;
     float spacing = 50;
-    float startX = screenWidth/2 - (cardWidth*3 + spacing*2)/2;
-    float startY = screenHeight/2 - cardHeight/2;
+    float totalWidth = cardCount * cardW + (cardCount - 1) * spacing;
+    float startX = screenWidth / 2 - totalWidth / 2;
+    float y = screenHeight / 2 - cardH / 2;
 
-    for(int i=0;i<3;i++)
+    for (int i = 0; i < cardCount; i++)
     {
-        Rectangle card = { startX + i*(cardWidth+spacing), startY, cardWidth, cardHeight };
-        if(CheckCollisionPointRec(GetMousePosition(), card) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
+        if (CheckCollisionPointRec(mouse, rect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            if(i < currentOptions.size())
-            {
-                currentOptions[i].applyUpgrade(player);
-                active = false;
-            }
+            currentOptions[i].applyUpgrade(player);
+            active = false;
         }
     }
 }
 
 void UpgradeMenu::Draw()
 {
-    if(!active) return;
+    if (!active) return;
 
-    DrawRectangle(0,0,screenWidth,screenHeight,Color{0,0,0,150});
+    DrawRectangle(0, 0, screenWidth, screenHeight, Color{0, 0, 0, 200});
 
-    float cardWidth = 300;
-    float cardHeight = 200;
-    float spacing = 50;
-    float startX = screenWidth/2 - (cardWidth*3 + spacing*2)/2;
-    float startY = screenHeight/2 - cardHeight/2;
+    int cardCount = (int)currentOptions.size();
+    float cardW = 300;
+    float cardH = 160;
+    float spacing = 60;
 
-    for(int i=0;i<3;i++)
+    float totalWidth = cardCount * cardW + (cardCount - 1) * spacing;
+    float startX = screenWidth / 2 - totalWidth / 2;
+    float y = screenHeight / 2 - cardH / 2;
+
+    Vector2 mouse = GetMousePosition();
+
+    for (int i = 0; i < cardCount; i++)
     {
-        Rectangle card = { startX + i*(cardWidth+spacing), startY, cardWidth, cardHeight };
-        DrawRectangleRounded(card, 0.2f, 10, LIGHTGRAY);
-        DrawRectangleRoundedLines(card, 0.2f, 10, WHITE);
-        if(i < currentOptions.size())
+        Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
+
+        bool hover = CheckCollisionPointRec(mouse, rect);
+
+        if (hover)
         {
-            DrawText(currentOptions[i].name.c_str(), card.x+20, card.y+20, 24, WHITE);
-            DrawText(currentOptions[i].description.c_str(), card.x+20, card.y+60, 18, WHITE);
+            rect.x -= 5;
+            rect.y -= 5;
+            rect.width += 10;
+            rect.height += 10;
         }
+
+        Rectangle shadow = { rect.x + 8, rect.y + 8, rect.width, rect.height };
+        DrawRectangleRounded(shadow, 0.15f, 8, Color{0,0,0,120});
+
+        Color bg = hover ? Color{200,120,255,255} : Color{120,40,180,255};
+        DrawRectangleRounded(rect, 0.15f, 8, bg);
+
+        DrawRectangleRoundedLines(rect, 0.15f, 8, WHITE);
+
+        int titleSize = 28;
+        int descSize = 18;
+
+        int titleWidth = MeasureText(currentOptions[i].name.c_str(), titleSize);
+        int descWidth = MeasureText(currentOptions[i].description.c_str(), descSize);
+
+        DrawText(
+            currentOptions[i].name.c_str(),
+            rect.x + rect.width/2 - titleWidth/2,
+            rect.y + 30,
+            titleSize,
+            WHITE
+        );
+
+        DrawText(
+            currentOptions[i].description.c_str(),
+            rect.x + rect.width/2 - descWidth/2,
+            rect.y + 80,
+            descSize,
+            LIGHTGRAY
+        );
     }
+
+    const char* title = "LEVEL UP";
+    int titleSize = 42;
+    int titleWidth = MeasureText(title, titleSize);
+
+    DrawText(
+        title,
+        screenWidth/2 - titleWidth/2,
+        y - 90,
+        titleSize,
+        GOLD
+    );
 }

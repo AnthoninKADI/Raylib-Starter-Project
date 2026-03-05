@@ -8,6 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <random>
 #include <algorithm>
 
 #include "UpgradeMenu.h"
@@ -78,6 +79,71 @@ std::vector<Tile> mapTiles;
 
 float gameTime = 0.0f;
 bool killAllEnemiesFlag = false;
+
+std::vector<UpgradeOption> allUpgrades =
+{
+    {
+        "Damage Up",
+        "+5 damage",
+        UpgradeDamage
+    },
+
+    {
+        "Move Speed",
+        "+20 movement speed",
+        UpgradeSpeed
+    },
+
+    {
+        "Max HP",
+        "+20 max health",
+        UpgradeHP
+    },
+
+    {
+        "Attack Speed",
+        "Shoot faster",
+        [](PlayerStats& player)
+        {
+            projectileCooldown *= 0.50f;
+        }
+    },
+
+    {
+        "Projectile Speed",
+        "Faster bullets",
+        [](PlayerStats& player)
+        {
+            projectileSpeed += 20.0f;
+        }
+    },
+
+    {
+        "Heal",
+        "Recover 30 HP",
+        [](PlayerStats& player)
+        {
+            playerHP += 20;
+            if (playerHP > playerMaxHP)
+                playerHP = playerMaxHP;
+        }
+    }
+};
+
+std::vector<UpgradeOption> GetRandomUpgrades(int count)
+{
+    std::vector<UpgradeOption> pool = allUpgrades;
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(pool.begin(), pool.end(), g);
+
+    if (pool.size() > count)
+        pool.resize(count);
+
+    return pool;
+}
 
 void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings, bool &fullscreen, float &mouseSensitivity, MainMenu::AimMode &aimMode);
 
@@ -288,11 +354,7 @@ int main()
 
         if(levelUpPending && !upgradeMenu.IsActive())
         {
-            std::vector<UpgradeOption> upgrades = {
-                {"Speed +", "Increase movement speed", UpgradeSpeed},
-                {"Damage +", "Increase damage", UpgradeDamage},
-                {"Max HP +", "Increase maximum health", UpgradeHP}
-            };
+            auto upgrades = GetRandomUpgrades(3);
             upgradeMenu.Show(upgrades);
             levelUpPending = false;
         }

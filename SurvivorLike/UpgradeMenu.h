@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include "Entities.h"
+#include "Entities.h"  // Contient PlayerStats
 #include <vector>
+#include <string>
+#include <functional>
 
 class UpgradeMenu
 {
