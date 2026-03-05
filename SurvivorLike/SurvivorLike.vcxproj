@@ -142,6 +142,7 @@
     <ClInclude Include="Entities.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="PauseMenu.h" />
+    <ClInclude Include="UpgradeMenu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DebugMenu.cpp" />
@@ -155,6 +156,7 @@
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="PauseMenu.cpp" />
     <ClCompile Include="rlImGui.cpp" />
+    <ClCompile Include="UpgradeMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Note.txt" />

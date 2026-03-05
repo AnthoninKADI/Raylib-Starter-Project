@@ -10,6 +10,8 @@
 #include <string>
 #include <algorithm>
 
+#include "UpgradeMenu.h"
+
 const int screenWidth  = 1600;
 const int screenHeight = 900;
 const float menuWidth  = 350.0f;
@@ -20,6 +22,10 @@ const int mapHeight = 200;
 
 Vector2 playerPos;
 PlayerStats playerStats;
+
+UpgradeMenu upgradeMenu(screenWidth, screenHeight);
+bool levelJustIncreased = false; 
+
 float playerSpeed = 400.0f;
 float playerSize  = 120.0f;
 int playerLevel   = 1;
@@ -30,6 +36,10 @@ float xpOrbValue  = 10.0f;
 float playerMaxHP = 100.0f;
 float playerHP    = 100.0f;
 float playerInvincibilityTimer = 0.0f;
+bool levelUpPending = false;
+void UpgradeSpeed(PlayerStats& player) { player.moveSpeed += 50; }
+void UpgradeDamage(PlayerStats& player) { player.damage += 5; }
+void UpgradeHP(PlayerStats& player) { player.maxHP += 20; }
 
 int totalKills = 0;
 float levelUpDuration = 2.0f;
@@ -134,8 +144,11 @@ void ForceLevelChange(int delta)
     playerLevel += delta;
     if(playerLevel < 1) playerLevel = 1;
     xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
+
     if(playerLevel > oldLevel)
     {
+        levelUpPending = true;
+
         LevelUpText t;
         t.pos = { playerPos.x, playerPos.y - playerSize - 20 };
         t.timer = levelUpDuration;
@@ -265,6 +278,25 @@ int main()
             continue;
         }
 
+        if(upgradeMenu.IsActive())
+        {
+            upgradeMenu.Update(playerStats);
+            upgradeMenu.Draw();
+            EndDrawing();
+            continue;
+        }
+
+        if(levelUpPending && !upgradeMenu.IsActive())
+        {
+            std::vector<UpgradeOption> upgrades = {
+                {"Speed +", "Increase movement speed", UpgradeSpeed},
+                {"Damage +", "Increase damage", UpgradeDamage},
+                {"Max HP +", "Increase maximum health", UpgradeHP}
+            };
+            upgradeMenu.Show(upgrades);
+            levelUpPending = false;
+        }
+
         float delta = GetFrameTime();
         gameTime += delta;
         projectileTimer += delta;
@@ -348,20 +380,11 @@ int main()
             else i++;
         }
 
-        int oldLevel = playerLevel;
         while(playerXP >= xpToLevel)
         {
             playerXP -= xpToLevel;
-            playerLevel++;
-            xpToLevel = 20.0f + pow(playerLevel,2.0f)*12.0f;
-
-            LevelUpText t;
-            t.pos = { playerPos.x, playerPos.y - playerSize - 20 };
-            t.timer = levelUpDuration;
-            levelUpTexts.push_back(t);
+            ForceLevelChange(1);
         }
-        if(playerLevel < oldLevel)
-            xpToLevel = 20.0f + pow(playerLevel,2.0f)*12.0f;
 
         if(projectileTimer >= projectileCooldown)
         {

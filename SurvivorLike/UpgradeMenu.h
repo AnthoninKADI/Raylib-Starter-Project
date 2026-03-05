@@ -1,0 +1,21 @@
+﻿#pragma once
+#include "Entities.h"
+#include <vector>
+
+class UpgradeMenu
+{
+public:
+    UpgradeMenu(float screenW, float screenH);
+
+    void Show(const std::vector<UpgradeOption>& options);
+    void Update(PlayerStats& player);
+    void Draw();
+
+    bool IsActive() const { return active; }
+
+private:
+    float screenWidth;
+    float screenHeight;
+    std::vector<UpgradeOption> currentOptions;
+    bool active;
+};

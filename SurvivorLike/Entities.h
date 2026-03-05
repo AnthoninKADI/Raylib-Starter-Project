@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include "raylib.h"
 #include <vector>
 
@@ -39,4 +41,11 @@ struct PlayerStats
     int projectileCount;
     float effectDuration;
     int projectilePierce; 
+};
+
+struct UpgradeOption
+{
+    std::string name;
+    std::string description;
+    void(*applyUpgrade)(PlayerStats&); 
 };
