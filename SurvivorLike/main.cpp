@@ -37,9 +37,9 @@ float playerMaxHP = 100.0f;
 float playerHP    = 100.0f;
 float playerInvincibilityTimer = 0.0f;
 bool levelUpPending = false;
-void UpgradeSpeed(PlayerStats& player) { player.moveSpeed += 50; }
+void UpgradeSpeed(PlayerStats& player) { playerSpeed += 20; }
 void UpgradeDamage(PlayerStats& player) { player.damage += 5; }
-void UpgradeHP(PlayerStats& player) { player.maxHP += 20; }
+void UpgradeHP(PlayerStats& player) { playerMaxHP += 20; }
 
 int totalKills = 0;
 float levelUpDuration = 2.0f;
