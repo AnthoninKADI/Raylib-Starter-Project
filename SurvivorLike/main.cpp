@@ -33,13 +33,17 @@ int playerLevel   = 1;
 float playerXP    = 0;
 float xpToLevel   = 20.0f + pow(playerLevel,2.0f)*12.0f;
 float xpOrbValue  = 10.0f;
+float xpPickupRadius = 120.0f;
+int projectileCount = 1;
+int projectilePierce = 1;
+int projectileRicochet = 0;
 
 float playerMaxHP = 100.0f;
 float playerHP    = 100.0f;
 float playerInvincibilityTimer = 0.0f;
 bool levelUpPending = false;
-void UpgradeSpeed(PlayerStats& player) { playerSpeed += 20; }
-void UpgradeDamage(PlayerStats& player) { player.damage += 5; }
+void UpgradeSpeed(PlayerStats& player) { playerSpeed += 5; }
+void UpgradeXP(PlayerStats& player) {  xpOrbValue += 2; }
 void UpgradeHP(PlayerStats& player) { playerMaxHP += 20; }
 
 int totalKills = 0;
@@ -64,7 +68,7 @@ float enemySpawnTimer    = 0.0f;
 float enemySpeed         = 150.0f;
 float enemySize          = 60.0f;
 bool spawnOnClick        = false;
-float enemySpawnRadius   = 300.0f;
+float enemySpawnRadius   = 500.0f;
 bool showSpawnRadius     = false;
 
 std::vector<XPOrb> xpOrbs;
@@ -83,21 +87,24 @@ bool killAllEnemiesFlag = false;
 std::vector<UpgradeOption> allUpgrades =
 {
     {
-        "Damage Up",
-        "+5 damage",
-        UpgradeDamage
+        "XP Value",
+        "+2 XP Value",
+        UpgradeXP,
+        1
     },
 
     {
         "Move Speed",
-        "+20 movement speed",
-        UpgradeSpeed
+        "+5 movement speed",
+        UpgradeSpeed,
+        0
     },
 
     {
         "Max HP",
-        "+20 max health",
-        UpgradeHP
+        "+5 max health",
+        UpgradeHP,
+        0
     },
 
     {
@@ -105,8 +112,9 @@ std::vector<UpgradeOption> allUpgrades =
         "Shoot faster",
         [](PlayerStats& player)
         {
-            projectileCooldown *= 0.50f;
-        }
+            projectileCooldown *= 0.975f;
+        },
+        1
     },
 
     {
@@ -114,35 +122,90 @@ std::vector<UpgradeOption> allUpgrades =
         "Faster bullets",
         [](PlayerStats& player)
         {
-            projectileSpeed += 20.0f;
-        }
+            projectileSpeed += 5.0f;
+        },
+        0
     },
 
     {
         "Heal",
-        "Recover 30 HP",
+        "Recover 20 HP",
         [](PlayerStats& player)
         {
             playerHP += 20;
             if (playerHP > playerMaxHP)
                 playerHP = playerMaxHP;
-        }
+        },
+        0
+    },
+    {
+        "Extra Projectile",
+        "+1 projectile",
+        [](PlayerStats& player)
+        {
+            projectileCount += 1;
+        },
+        3
+    },
+    {
+        "XP Magnet",
+        "XP orbs attract from further",
+        [](PlayerStats& player)
+        {
+            xpPickupRadius += 50;
+        },
+        1
+    },
+    {
+        "Piercing Shot",
+        "Projectiles go through enemies",
+        [](PlayerStats& player)
+        {
+            player.projectilePierce += 1;
+        },
+        1
+    },
+    {
+        "Ricochet",
+        "Projectiles bounce to another enemy",
+        [](PlayerStats& player)
+        {
+            projectileRicochet += 1;
+        },
+        2
     }
 };
 
 std::vector<UpgradeOption> GetRandomUpgrades(int count)
 {
     std::vector<UpgradeOption> pool = allUpgrades;
+    std::vector<UpgradeOption> selected;
 
     std::random_device rd;
-    std::mt19937 g(rd());
+    std::mt19937 gen(rd());
 
-    std::shuffle(pool.begin(), pool.end(), g);
+    while ((int)selected.size() < count && !pool.empty())
+    {
+        std::vector<float> weights;
+        for(auto& u : pool)
+        {
+            switch(u.rarity)
+            {
+            case 0: weights.push_back(0.6f); break;
+            case 1: weights.push_back(0.25f); break;
+            case 2: weights.push_back(0.1f); break;
+            case 3: weights.push_back(0.05f); break;
+            }
+        }
 
-    if (pool.size() > count)
-        pool.resize(count);
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+        int idx = dist(gen);
 
-    return pool;
+        selected.push_back(pool[idx]);
+        pool.erase(pool.begin() + idx);
+    }
+
+    return selected;
 }
 
 void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings, bool &fullscreen, float &mouseSensitivity, MainMenu::AimMode &aimMode);
@@ -193,14 +256,19 @@ void ResetGame()
     gameTime = 0.0f;             
     levelUpTexts.clear();        
 
-    playerStats.moveSpeed          = playerSpeed;
-    playerStats.lifeSteal          = 0.0f;
-    playerStats.damage             = 1.0f;
-    playerStats.projectileCooldown = projectileCooldown;
-    playerStats.maxHP              = playerMaxHP;
-    playerStats.projectileCount    = 1;
-    playerStats.effectDuration     = 0.0f;
-    playerStats.projectilePierce   = 1; 
+    float playerSpeed = 400.0f;
+    float playerSize  = 120.0f;
+    float xpOrbValue  = 10.0f;
+    float xpPickupRadius = 120.0f;
+    int projectileCount = 1;
+
+    float playerMaxHP = 100.0f;
+    float playerHP    = 100.0f;
+    float projectileSpeed = 400.0f;
+    float projectileCooldown = 1.5f;
+    float projectileTimer = 0.0f;
+    int projectilePierce = 1;
+    int projectileRicochet = 0;
 }
 
 
@@ -261,7 +329,7 @@ int main()
     DebugMenu debugMenu(menuWidth);
 
     const float hitCooldown = 0.5f;
-    const float passiveRegen = 1.0f / 60.0f;
+    const float passiveRegen = 0.5f / 60.0f;
     const float flashSpeed = 15.0f;
 
     while(!WindowShouldClose())
@@ -352,6 +420,8 @@ int main()
             continue;
         }
 
+        
+
         if(levelUpPending && !upgradeMenu.IsActive())
         {
             auto upgrades = GetRandomUpgrades(3);
@@ -432,7 +502,7 @@ int main()
             float dx = playerPos.x - xpOrbs[i].pos.x;
             float dy = playerPos.y - xpOrbs[i].pos.y;
             float dist = sqrt(dx*dx + dy*dy);
-            float pickupRadius = playerSize * 0.6f;
+            float pickupRadius = xpPickupRadius;
 
             if(dist < pickupRadius)
             {
@@ -487,20 +557,35 @@ int main()
             if(canShoot)
             {
                 float len = sqrt(shootDir.x*shootDir.x + shootDir.y*shootDir.y);
-                if(len>0)
-                {
-                    shootDir.x/=len;
-                    shootDir.y/=len;
 
-                    Projectile p;
-                    p.pos = playerPos;
-                    p.dir = shootDir;
-                    p.speed = projectileSpeed;
-                    p.active = true;
-                    p.range = 1000.0f;
-                    p.travelled = 0.0f;
-                    p.pierceCount = 0;
-                    projectiles.push_back(p);
+                if(len > 0)
+                {
+                    shootDir.x /= len;
+                    shootDir.y /= len;
+
+                    float baseAngle = atan2f(shootDir.y, shootDir.x);
+
+                    for(int i = 0; i < projectileCount; i++)
+                    {
+                        float angleOffset = (i - (projectileCount-1)/2.0f) * 0.2f;
+
+                        Projectile p;
+                        p.pos = playerPos;
+
+                        p.dir = {
+                            cosf(baseAngle + angleOffset),
+                            sinf(baseAngle + angleOffset)
+                        };
+
+                        p.speed = projectileSpeed;
+                        p.active = true;
+                        p.range = 1000.0f;
+                        p.travelled = 0.0f;
+                        p.ricochetCount = 0;
+                        p.pierceCount = 0;
+
+                        projectiles.push_back(p);
+                    }
                 }
             }
         }
@@ -534,8 +619,45 @@ int main()
                     enemies.erase(enemies.begin()+j);
 
                     projectiles[i].pierceCount++;
-                    if(projectiles[i].pierceCount >= playerStats.projectilePierce)
+
+                    if(projectiles[i].ricochetCount < projectileRicochet)
+                    {
+                        Enemy* closest = nullptr;
+                        float closestDist = 999999;
+
+                        for(int k = 0; k < enemies.size(); k++)
+                        {
+                            float d2 = Distance(projectiles[i].pos, enemies[k].pos);
+
+                            if(d2 < closestDist)
+                            {
+                                closestDist = d2;
+                                closest = &enemies[k];
+                            }
+                        }
+
+                        if(closest != nullptr)
+                        {
+                            Vector2 newDir;
+                            newDir.x = closest->pos.x - projectiles[i].pos.x;
+                            newDir.y = closest->pos.y - projectiles[i].pos.y;
+
+                            float len = sqrt(newDir.x*newDir.x + newDir.y*newDir.y);
+
+                            if(len > 0)
+                            {
+                                newDir.x /= len;
+                                newDir.y /= len;
+                            }
+
+                            projectiles[i].dir = newDir;
+                            projectiles[i].ricochetCount++;
+                        }
+                    }
+                    else if(projectiles[i].pierceCount >= playerStats.projectilePierce)
+                    {
                         projectiles[i].active = false;
+                    }
 
                     break;
                 }

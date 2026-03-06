@@ -1,5 +1,7 @@
 ﻿#include "UpgradeMenu.h"
 #include "raylib.h"
+#include <cstdlib>   
+#include <ctime>     
 #include <string>
 
 UpgradeMenu::UpgradeMenu(float screenW, float screenH)
@@ -43,11 +45,18 @@ void UpgradeMenu::Draw()
 {
     if (!active) return;
 
-    DrawRectangle(0, 0, screenWidth, screenHeight, Color{0, 0, 0, 200});
+    float time = GetTime();
+
+    // ===== Fond animé =====
+    for(int i = 0; i < screenHeight; i += 10)
+    {
+        float t = sin(time + i * 0.05f) * 0.5f + 0.5f;
+        DrawRectangle(0, i, screenWidth, 10, { (unsigned char)(20 + 50*t), (unsigned char)(20 + 50*t), 40, 180 });
+    }
 
     int cardCount = (int)currentOptions.size();
-    float cardW = 300;
-    float cardH = 160;
+    float cardW = 320;
+    float cardH = 180;
     float spacing = 60;
 
     float totalWidth = cardCount * cardW + (cardCount - 1) * spacing;
@@ -59,57 +68,94 @@ void UpgradeMenu::Draw()
     for (int i = 0; i < cardCount; i++)
     {
         Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
-
         bool hover = CheckCollisionPointRec(mouse, rect);
 
-        if (hover)
+        // ===== Effet de "pop" au survol ou apparition =====
+        float appearAnim = fmin(1.0f, (time * 2.0f - i * 0.2f));
+        appearAnim = pow(appearAnim, 0.5f);
+        float scale = hover ? 1.15f : 0.9f + 0.1f * appearAnim;
+
+        Rectangle drawRect = {
+            rect.x - rect.width * (scale - 1) / 2,
+            rect.y - rect.height * (scale - 1) / 2,
+            rect.width * scale,
+            rect.height * scale
+        };
+
+        // Shadow de la carte
+        DrawRectangleRounded({drawRect.x + 8, drawRect.y + 8, drawRect.width, drawRect.height}, 0.2f, 8, {0,0,0,100});
+
+        // Glow pour rareté
+        Color baseColor;
+        switch(currentOptions[i].rarity)
         {
-            rect.x -= 5;
-            rect.y -= 5;
-            rect.width += 10;
-            rect.height += 10;
+            case 0: baseColor = {150,150,150,255}; break; // Common
+            case 1: baseColor = {80,150,255,255}; break;  // Rare
+            case 2: baseColor = {180,0,180,255}; break;   // Epic
+            case 3: baseColor = {255,200,0,255}; break;   // Legendary
         }
+        float glow = (sin(time * 3.0f + i) * 0.5f + 0.5f) * 40;
+        Color cardColor = {
+            (unsigned char)std::min(255, int(baseColor.r + glow)),
+            (unsigned char)std::min(255, int(baseColor.g + glow)),
+            (unsigned char)std::min(255, int(baseColor.b + glow)),
+            255
+        };
+        DrawRectangleRounded(drawRect, 0.2f, 8, cardColor);
 
-        Rectangle shadow = { rect.x + 8, rect.y + 8, rect.width, rect.height };
-        DrawRectangleRounded(shadow, 0.15f, 8, Color{0,0,0,120});
+        // Contour de la carte
+        DrawRectangleRoundedLines(drawRect, 0.2f, 8, WHITE);
 
-        Color bg = hover ? Color{200,120,255,255} : Color{120,40,180,255};
-        DrawRectangleRounded(rect, 0.15f, 8, bg);
-
-        DrawRectangleRoundedLines(rect, 0.15f, 8, WHITE);
-
-        int titleSize = 28;
+        // ===== Texte avec ombre =====
+        int titleSize = 30;
         int descSize = 18;
+        std::string name = currentOptions[i].name;
+        std::string desc = currentOptions[i].description;
 
-        int titleWidth = MeasureText(currentOptions[i].name.c_str(), titleSize);
-        int descWidth = MeasureText(currentOptions[i].description.c_str(), descSize);
+        int titleWidth = MeasureText(name.c_str(), titleSize);
+        int descWidth  = MeasureText(desc.c_str(), descSize);
 
-        DrawText(
-            currentOptions[i].name.c_str(),
-            rect.x + rect.width/2 - titleWidth/2,
-            rect.y + 30,
+        // Ombre du titre
+        DrawText(name.c_str(),
+            drawRect.x + drawRect.width/2 - titleWidth/2 + 2,
+            drawRect.y + 20 + 2,
             titleSize,
-            WHITE
-        );
+            {0,0,0,150}); // ombre subtile
+        DrawText(name.c_str(),
+            drawRect.x + drawRect.width/2 - titleWidth/2,
+            drawRect.y + 20,
+            titleSize,
+            WHITE); // texte principal
 
-        DrawText(
-            currentOptions[i].description.c_str(),
-            rect.x + rect.width/2 - descWidth/2,
-            rect.y + 80,
+        // Ombre de la description
+        DrawText(desc.c_str(),
+            drawRect.x + drawRect.width/2 - descWidth/2 + 1,
+            drawRect.y + 80 + 1,
             descSize,
-            LIGHTGRAY
-        );
+            {0,0,0,120});
+        DrawText(desc.c_str(),
+            drawRect.x + drawRect.width/2 - descWidth/2,
+            drawRect.y + 80,
+            descSize,
+            LIGHTGRAY);
     }
 
-    const char* title = "LEVEL UP";
-    int titleSize = 42;
+    // ===== Titre "LEVEL UP" =====
+    const char* title = "LEVEL UP!";
+    int titleSize = 50;
     int titleWidth = MeasureText(title, titleSize);
+    float bounce = sin(time * 4.0f) * 5.0f;
 
-    DrawText(
-        title,
-        screenWidth/2 - titleWidth/2,
-        y - 90,
+    // Ombre du titre
+    DrawText(title,
+        screenWidth/2 - titleWidth/2 + 2,
+        y - 120 + bounce + 2,
         titleSize,
-        GOLD
-    );
+        {0,0,0,180});
+    // Texte principal
+    DrawText(title,
+        screenWidth/2 - titleWidth/2,
+        y - 120 + bounce,
+        titleSize,
+        {255,215,0,255});
 }

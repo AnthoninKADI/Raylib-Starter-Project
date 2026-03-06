@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <string>
 
 #include "raylib.h"
@@ -28,7 +29,8 @@ struct Projectile
     bool active;
     float range;
     float travelled;
-    int pierceCount; 
+    int pierceCount;
+    int ricochetCount;
 };
 
 struct PlayerStats
@@ -47,5 +49,6 @@ struct UpgradeOption
 {
     std::string name;
     std::string description;
-    void(*applyUpgrade)(PlayerStats&); 
+    std::function<void(PlayerStats&)> applyUpgrade;
+    int rarity; 
 };
