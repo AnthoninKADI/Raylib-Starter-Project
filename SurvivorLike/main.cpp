@@ -10,6 +10,7 @@
 #include <string>
 #include <random>
 #include <algorithm>
+#include <iostream>
 
 #include "UpgradeMenu.h"
 
@@ -43,11 +44,20 @@ float playerHP    = 100.0f;
 float playerInvincibilityTimer = 0.0f;
 bool levelUpPending = false;
 
+bool gameOver = false;          
+float deathTimer = 0.0f;       
+float gameTimer = 0.0f;         
+int totalKills = 0;             
+int finalKills = 0;
+int finalLevel = 0;
+std::vector<UpgradeOption> currentUpgrades; 
+std::vector<UpgradeOption> finalUpgrades;   
+float finalSurvivalTime = 0.0f;
+
 void UpgradeSpeed(PlayerStats& player) { playerSpeed += 5; }
 void UpgradeXP(PlayerStats& player) {  xpOrbValue += 2; }
 void UpgradeHP(PlayerStats& player) { playerMaxHP += 5; }
 
-int totalKills = 0;
 float levelUpDuration = 2.0f;
 
 float Distance(Vector2 a, Vector2 b)
@@ -240,6 +250,7 @@ std::vector<UpgradeOption> GetRandomUpgrades(int count)
     return selected;
 }
 
+
 void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings, bool &fullscreen, float &mouseSensitivity, MainMenu::AimMode &aimMode);
 
 std::string FormatTime(float seconds)
@@ -276,33 +287,190 @@ void ResetGame()
     playerHP = playerMaxHP;
     playerLevel = 1;
     playerXP = 0;
-    xpToLevel = 20.0f + pow(playerLevel,2.0f)*12.0f;
-    totalKills = 0;
-
+    xpToLevel = 20.0f + pow(playerLevel, 2.0f) * 12.0f;
+    
     enemies.clear();
     xpOrbs.clear();
     projectiles.clear();
+    levelUpTexts.clear();
 
-    enemySpawnTimer = 0.0f;      
-    projectileTimer = 0.0f;      
-    gameTime = 0.0f;             
-    levelUpTexts.clear();        
+    enemySpawnTimer = 0.0f;
+    projectileTimer = 0.0f;
+    gameTime = 0.0f;
+    
+    playerSpeed = 400.0f;
+    playerSize  = 120.0f;
+    xpOrbValue  = 10.0f;
+    xpPickupRadius = 120.0f;
+    projectileCount = 1;
 
-    float playerSpeed = 400.0f;
-    float playerSize  = 120.0f;
-    float xpOrbValue  = 10.0f;
-    float xpPickupRadius = 120.0f;
-    int projectileCount = 1;
-
-    float playerMaxHP = 100.0f;
-    float playerHP    = 100.0f;
-    float projectileSpeed = 400.0f;
-    float projectileCooldown = 1.5f;
-    float projectileTimer = 0.0f;
-    int projectilePierce = 1;
-    int projectileRicochet = 0;
+    playerMaxHP = 100.0f;
+    playerHP    = 100.0f;
+    projectileSpeed = 400.0f;
+    projectileCooldown = 2.0f;
+    projectilePierce = 0;
+    projectileRicochet = 0;
+    
+    currentUpgrades.clear(); 
+    finalUpgrades.clear();
+    
+    for (auto& upgrade : allUpgrades) 
+    {
+        upgrade.level = 1;
+    }
 }
 
+
+void DrawGameOverScreen(bool &inGame)
+{
+    // -----------------------------
+    // Titre principal
+    // -----------------------------
+    const char* title = "YOU DIED";
+    int titleSize = 64;
+    int titleWidth = MeasureText(title, titleSize);
+    // Ombre pour le titre
+    DrawText(title, screenWidth/2 - titleWidth/2 + 4, 60 + 4, titleSize, BLACK);
+    DrawText(title, screenWidth/2 - titleWidth/2, 60, titleSize, RED);
+
+    // -----------------------------
+    // Cartes statistiques (Time / Kills / Level)
+    // -----------------------------
+    struct StatCard { std::string text; Color color; };
+    std::vector<StatCard> stats = {
+        { "Time Survived: " + std::to_string((int)finalSurvivalTime) + "s", {50,200,255,255} },
+        { "Enemies Killed: " + std::to_string(finalKills), {255,100,100,255} },
+        { "Final Level: " + std::to_string(finalLevel), {200,255,100,255} }
+    };
+
+    float cardWidth = 400;
+    float cardHeight = 50;
+    float spacingY = 15;
+    float startY = 180;
+
+    for (int i = 0; i < stats.size(); i++)
+    {
+        float cardX = screenWidth/2 - cardWidth/2;
+        float cardY = startY + i*(cardHeight + spacingY);
+
+        // Fond de la carte semi-transparent et arrondi
+        DrawRectangleRounded({cardX, cardY, cardWidth, cardHeight}, 0.2f, 6, {20,20,20,180});
+        DrawRectangleRoundedLines({cardX, cardY, cardWidth, cardHeight}, 0.2f, 4, WHITE);
+
+        // Texte centré avec ombre
+        int textSize = 28;
+        int textWidth = MeasureText(stats[i].text.c_str(), textSize);
+
+        // Ombre
+        DrawText(stats[i].text.c_str(), cardX + cardWidth/2 - textWidth/2 + 2, cardY + 10 + 2, textSize, BLACK);
+
+        // Texte principal
+        DrawText(stats[i].text.c_str(), cardX + cardWidth/2 - textWidth/2, cardY + 10, textSize, stats[i].color);
+    }
+
+    // -----------------------------
+    // Rectangle scrollable pour les upgrades
+    // -----------------------------
+    float rectWidth  = 520;
+    float rectHeight = 450; // un peu plus grand pour contenir plus d'upgrades
+    float rectX = screenWidth/2 - rectWidth/2;
+    float rectY = startY + stats.size() * (cardHeight + spacingY) + 30;
+
+    // Fond et bordure du rectangle
+    DrawRectangleRounded({rectX, rectY, rectWidth, rectHeight}, 0.2f, 8, {50,50,50,200});
+    DrawRectangleRoundedLines({rectX, rectY, rectWidth, rectHeight}, 0.2f, 8, WHITE);
+
+    // -----------------------------
+    // Gestion du scroll
+    // -----------------------------
+    static float scrollOffset = 0.0f;
+    float spacing = 35.0f;
+    float maxContentHeight = finalUpgrades.size() * spacing + 20;
+    float visibleHeight = rectHeight - 20;
+    float scrollSpeed = 30.0f;
+
+    scrollOffset -= GetMouseWheelMove() * scrollSpeed;
+    if(scrollOffset < 0) scrollOffset = 0;
+    if(scrollOffset > maxContentHeight - visibleHeight)
+        scrollOffset = std::max(0.0f, maxContentHeight - visibleHeight);
+
+    float startUpgradeY = rectY + 10 - scrollOffset;
+    for(auto& u : finalUpgrades)
+    {
+        if(startUpgradeY + spacing < rectY + 10) { startUpgradeY += spacing; continue; }
+        if(startUpgradeY > rectY + rectHeight - 10) break;
+
+        std::string upText = u.name + " - Lvl " + std::to_string(u.level);
+        int textWidth = MeasureText(upText.c_str(), 24);
+
+        // Couleur rareté
+        Color rarityColor;
+        switch(u.rarity)
+        {
+            case 0: rarityColor = {120,120,120,255}; break; // COMMON
+            case 1: rarityColor = {50,120,255,255};  break; // RARE
+            case 2: rarityColor = {150,0,150,255};  break; // EPIC
+            case 3: rarityColor = {200,150,0,255};  break; // LEGEND
+            default: rarityColor = WHITE; break;
+        }
+
+        // Ombre
+        DrawText(upText.c_str(), rectX + rectWidth/2 - textWidth/2 + 2, startUpgradeY + 2, 24, BLACK);
+        DrawText(upText.c_str(), rectX + rectWidth/2 - textWidth/2, startUpgradeY, 24, rarityColor);
+
+        startUpgradeY += spacing;
+    }
+
+    // -----------------------------
+    // Bouton Back to Menu avec hover
+    // -----------------------------
+    Rectangle backButton = { screenWidth/2 - 150, screenHeight - 100, 300, 60 };
+    Vector2 mousePos = GetMousePosition();
+    bool hover = CheckCollisionPointRec(mousePos, backButton);
+
+    // Animation subtile sur le hover
+    float scale = hover ? 1.05f : 1.0f;
+    Rectangle drawRect = {
+        backButton.x - backButton.width*(scale-1)/2,
+        backButton.y - backButton.height*(scale-1)/2,
+        backButton.width*scale,
+        backButton.height*scale
+    };
+
+    Color btnColor;
+    if (hover) {
+        btnColor.r = 120; btnColor.g = 180; btnColor.b = 255; btnColor.a = 255;
+    } else {
+        btnColor.r = 100; btnColor.g = 140; btnColor.b = 220; btnColor.a = 255;
+    }
+
+    Color borderColor;
+    if (hover) {
+        borderColor.r = 255; borderColor.g = 255; borderColor.b = 255; borderColor.a = 255;
+    } else {
+        borderColor.r = 200; borderColor.g = 200; borderColor.b = 220; borderColor.a = 255;
+    }
+
+    DrawRectangleRounded(drawRect, 0.25f, 6, btnColor);
+    DrawRectangleRoundedLines(drawRect, 0.25f, 6, borderColor);
+
+    const char* btnText = "Back to Menu";
+    int textSize = 30;
+    int textWidth = MeasureText(btnText, textSize);
+
+    // Ombre du texte
+    DrawText(btnText, drawRect.x + drawRect.width/2 - textWidth/2 + 2,
+                      drawRect.y + drawRect.height/2 - textSize/2 + 2, textSize, BLACK);
+    DrawText(btnText, drawRect.x + drawRect.width/2 - textWidth/2,
+                      drawRect.y + drawRect.height/2 - textSize/2, textSize, WHITE);
+
+    if(hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        ResetGame();
+        gameOver = false;
+        inGame = false;
+    }
+}
 
 void ForceLevelChange(int delta)
 {
@@ -324,7 +492,7 @@ void ForceLevelChange(int delta)
 
 int main()
 {
-    InitWindow(screenWidth, screenHeight,"Vampire Survivor Base");
+    InitWindow(screenWidth, screenHeight,"RUNIC SURVIVOR");
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     rlImGuiSetup(true);
@@ -446,13 +614,24 @@ int main()
 
         if(upgradeMenu.IsActive())
         {
-            upgradeMenu.Update(playerStats, allUpgrades);
+            upgradeMenu.Update(playerStats, allUpgrades, currentUpgrades);
             upgradeMenu.Draw(playerStats);
             EndDrawing();
             continue;
         }
 
-        
+        if(gameOver)
+        {
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawRectangle(0, 0, screenWidth, screenHeight, {255,0,0,120}); 
+            std::cout << "Final Upgrades count: " << finalUpgrades.size() << "\n";
+            for(auto &u : finalUpgrades)
+                std::cout << u.name << " lvl " << u.level << "\n";
+            DrawGameOverScreen(inGame);
+            EndDrawing();
+            continue;
+        }
 
         if(levelUpPending && !upgradeMenu.IsActive())
         {
@@ -462,8 +641,27 @@ int main()
         }
 
         float delta = GetFrameTime();
-        gameTime += delta;
-        projectileTimer += delta;
+
+        if(!gameOver)
+        {
+            gameTime += delta;
+            projectileTimer += delta;
+        }
+
+        if(gameOver)
+        {
+            deathTimer += delta;
+            float redAlpha = std::min(120.0f, 120.0f * (deathTimer / 1.0f)); 
+            DrawRectangle(0,0,screenWidth,screenHeight,{255,0,0,(unsigned char)redAlpha});
+        }
+
+        if(gameOver && deathTimer >= 1.0f)
+        {
+            DrawGameOverScreen(inGame); 
+            EndDrawing();
+            continue; 
+        }
+        
         if(playerInvincibilityTimer > 0) playerInvincibilityTimer -= delta;
         else playerInvincibilityTimer = 0;
 
@@ -526,7 +724,23 @@ int main()
                 playerHP -= 10.0f;
                 if(playerHP < 0) playerHP = 0;
                 playerInvincibilityTimer = hitCooldown;
+                if(playerHP <= 0 && !gameOver)
+                {
+                    gameOver = true;
+                    deathTimer = 0.0f;
+
+                    finalKills = totalKills;       
+                    finalLevel = playerLevel;      
+                    finalSurvivalTime = gameTime;
+                    
+                    finalUpgrades.clear();
+                    for(auto &u : currentUpgrades)
+                    {
+                        finalUpgrades.push_back(u); 
+                    }
+                }
             }
+            
         }
 
         for(int i = 0; i < xpOrbs.size(); )

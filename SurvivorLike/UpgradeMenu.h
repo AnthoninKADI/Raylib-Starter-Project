@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Entities.h"  // Contient PlayerStats
+#include "Entities.h"  
 #include <vector>
 #include <string>
 #include <functional>
@@ -10,7 +10,7 @@ public:
     UpgradeMenu(float screenW, float screenH);
 
     void Show(const std::vector<UpgradeOption>& options);
-    void Update(PlayerStats& player, std::vector<UpgradeOption>& allUpgrades);
+    void Update(PlayerStats& player, std::vector<UpgradeOption>& allUpgrades, std::vector<UpgradeOption>& currentUpgrades);
     void Draw(PlayerStats& player);
 
     bool IsActive() const { return active; }

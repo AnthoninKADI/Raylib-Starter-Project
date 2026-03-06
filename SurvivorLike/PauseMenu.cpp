@@ -145,8 +145,7 @@ void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings,
 
     float baseX = panel.x + 80;
     float baseY = panel.y + 80;
-
-    // Fullscreen toggle
+    
     Rectangle toggle = { baseX, baseY, 70, 30 };
     DrawText("Fullscreen", toggle.x + 110, toggle.y + 5, 20, WHITE);
     DrawRectangleRounded(toggle, 1.0f, 10, fullscreen ? GREEN : DARKGRAY);
@@ -156,8 +155,7 @@ void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings,
         fullscreen = !fullscreen;
         ToggleFullscreen();
     }
-
-    // Sensibilité souris
+    
     Rectangle sensBar = { baseX, baseY+100, 350, 8 };
     DrawText("Mouse Sensitivity", sensBar.x, sensBar.y-30, 20, WHITE);
     DrawRectangleRounded(sensBar, 1.0f, 10, DARKGRAY);
@@ -170,8 +168,7 @@ void DrawSettingsMenu(float screenWidth, float screenHeight, bool &showSettings,
         if(mouseSensitivity<0.1f) mouseSensitivity=0.1f;
         if(mouseSensitivity>5.0f) mouseSensitivity=5.0f;
     }
-
-    // Aim Mode dropdown
+    
     const char* aimModes[] = {"Closest Enemy","Mouse Position"};
     static bool dropdownOpen=false;
     Rectangle dropdownRect = { baseX, baseY+190, 260, 40 };

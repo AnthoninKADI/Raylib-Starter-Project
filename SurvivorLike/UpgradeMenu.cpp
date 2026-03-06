@@ -17,7 +17,9 @@ void UpgradeMenu::Show(const std::vector<UpgradeOption>& options)
     active = true;
 }
 
-void UpgradeMenu::Update(PlayerStats& player, std::vector<UpgradeOption>& allUpgrades)
+void UpgradeMenu::Update(PlayerStats& player, 
+                         std::vector<UpgradeOption>& allUpgrades,
+                         std::vector<UpgradeOption>& currentUpgrades)
 {
     if (!active) return;
 
@@ -35,10 +37,8 @@ void UpgradeMenu::Update(PlayerStats& player, std::vector<UpgradeOption>& allUpg
         Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
         if (CheckCollisionPointRec(mouse, rect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            // Appliquer l'upgrade
             currentOptions[i].applyUpgrade(player);
-
-            // Mettre à jour le niveau dans le pool global
+            
             for (auto& upgrade : allUpgrades)
             {
                 if (upgrade.name == currentOptions[i].name)
@@ -48,6 +48,19 @@ void UpgradeMenu::Update(PlayerStats& player, std::vector<UpgradeOption>& allUpg
                     break;
                 }
             }
+            
+            bool found = false;
+            for(auto &u : currentUpgrades)
+            {
+                if(u.name == currentOptions[i].name)
+                {
+                    u.level = currentOptions[i].level; 
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                currentUpgrades.push_back(currentOptions[i]);
 
             active = false;
         }
@@ -59,10 +72,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
     if (!active) return;
 
     float time = GetTime();
-
-    // -----------------------------
-    // Fond animé
-    // -----------------------------
+    
     for(int i = 0; i < screenHeight; i += 10)
     {
         float t = sin(time + i * 0.05f) * 0.5f + 0.5f;
@@ -73,10 +83,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
             180 
         });
     }
-
-    // -----------------------------
-    // Setup cartes
-    // -----------------------------
+    
     int cardCount = (int)currentOptions.size();
     float cardW = 320;
     float cardH = 180;
@@ -92,10 +99,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
     {
         Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
         bool hover = CheckCollisionPointRec(mouse, rect);
-
-        // -----------------------------
-        // Animation pop / hover
-        // -----------------------------
+        
         float appearAnim = fmin(1.0f, (time * 2.0f - i * 0.2f)); 
         appearAnim = pow(appearAnim, 0.5f);
         float scale = hover ? 1.1f : 0.9f + 0.1f * appearAnim;
@@ -106,15 +110,9 @@ void UpgradeMenu::Draw(PlayerStats& player)
             rect.width * scale,
             rect.height * scale
         };
-
-        // -----------------------------
-        // Ombre / shadow
-        // -----------------------------
+        
         DrawRectangleRounded({drawRect.x + 8, drawRect.y + 8, drawRect.width, drawRect.height}, 0.2f, 8, {0,0,0,100});
-
-        // -----------------------------
-        // Couleur de la carte selon rareté
-        // -----------------------------
+        
         Color baseColor;
         const char* rarityText;
         Color rarityColor;
@@ -139,29 +137,21 @@ void UpgradeMenu::Draw(PlayerStats& player)
 
         if(hover) DrawRectangleRoundedLines(drawRect, 0.2f, 6, WHITE);
 
-        // -----------------------------
-        // Texte rareté en haut de la carte avec ombre
-        // -----------------------------
         int raritySize = 20;
         int rarityWidth = MeasureText(rarityText, raritySize);
         DrawText(rarityText, drawRect.x  + drawRect.width / 2 - rarityWidth / 2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); 
         DrawText(rarityText, drawRect.x  + drawRect.width / 2 - rarityWidth / 2, drawRect.y + 10, raritySize, rarityColor);
-
-        // Niveau en haut à gauche
-        if(currentOptions[i].showLevel) // true sauf heal etc.
+        
+        if(currentOptions[i].showLevel) 
         {
             std::string lvlText = "Lvl " + std::to_string(currentOptions[i].level);
             int lvlSize = 18;
             int lvlWidth = MeasureText(lvlText.c_str(), lvlSize);
-
-            // Ombre
+            
             DrawText(lvlText.c_str(), drawRect.x + 5 + 2 + 1, drawRect.y + 5 + 1, lvlSize, BLACK);
             DrawText(lvlText.c_str(), drawRect.x + 5 + 2, drawRect.y + 5, lvlSize, rarityColor);
         }
-
-        // -----------------------------
-        // Texte principal (nom & description)
-        // -----------------------------
+        
         int titleSize = 28;
         int descSize = 18;
 
@@ -173,10 +163,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
 
         DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width / 2 - descWidth / 2 + 1, drawRect.y + 80 + 1, descSize, BLACK);
         DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width / 2 - descWidth / 2, drawRect.y + 80, descSize, LIGHTGRAY);
-
-        // -----------------------------
-        // Texte "changement" (preview)
-        // -----------------------------
+        
         if(currentOptions[i].previewText)
         {
             std::string changeText = currentOptions[i].previewText(player);
@@ -186,10 +173,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
             DrawText(changeText.c_str(), drawRect.x + drawRect.width / 2 - changeWidth / 2, drawRect.y + 120, changeSize, GREEN);
         }
     }
-
-    // -----------------------------
-    // Titre général du menu
-    // -----------------------------
+    
     const char* title = "LEVEL UP!";
     int titleSize = 50;
     int titleWidth = MeasureText(title, titleSize);
