@@ -11,7 +11,7 @@ public:
 
     void Show(const std::vector<UpgradeOption>& options);
     void Update(PlayerStats& player);
-    void Draw();
+    void Draw(PlayerStats& player);
 
     bool IsActive() const { return active; }
 

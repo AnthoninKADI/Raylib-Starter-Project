@@ -41,19 +41,29 @@ void UpgradeMenu::Update(PlayerStats& player)
     }
 }
 
-void UpgradeMenu::Draw()
+void UpgradeMenu::Draw(PlayerStats& player)
 {
     if (!active) return;
 
     float time = GetTime();
 
-    // ===== Fond animé =====
+    // -----------------------------
+    // Fond animé
+    // -----------------------------
     for(int i = 0; i < screenHeight; i += 10)
     {
         float t = sin(time + i * 0.05f) * 0.5f + 0.5f;
-        DrawRectangle(0, i, screenWidth, 10, { (unsigned char)(20 + 50*t), (unsigned char)(20 + 50*t), 40, 180 });
+        DrawRectangle(0, i, screenWidth, 10, { 
+            (unsigned char)(20 + 50 * t), 
+            (unsigned char)(20 + 50 * t), 
+            40, 
+            180 
+        });
     }
 
+    // -----------------------------
+    // Setup cartes
+    // -----------------------------
     int cardCount = (int)currentOptions.size();
     float cardW = 320;
     float cardH = 180;
@@ -70,113 +80,99 @@ void UpgradeMenu::Draw()
         Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
         bool hover = CheckCollisionPointRec(mouse, rect);
 
-        // ===== Effet de "pop" au survol ou apparition =====
-        float appearAnim = fmin(1.0f, (time * 2.0f - i * 0.2f));
+        // -----------------------------
+        // Animation pop / hover
+        // -----------------------------
+        float appearAnim = fmin(1.0f, (time*2.0f - i*0.2f)); 
         appearAnim = pow(appearAnim, 0.5f);
-        float scale = hover ? 1.15f : 0.9f + 0.1f * appearAnim;
+        float scale = hover ? 1.1f : 0.9f + 0.1f * appearAnim;
 
         Rectangle drawRect = {
-            rect.x - rect.width * (scale - 1) / 2,
-            rect.y - rect.height * (scale - 1) / 2,
+            rect.x - rect.width * (scale-1)/2,
+            rect.y - rect.height * (scale-1)/2,
             rect.width * scale,
             rect.height * scale
         };
 
-        // Shadow de la carte
+        // -----------------------------
+        // Ombre / shadow
+        // -----------------------------
         DrawRectangleRounded({drawRect.x + 8, drawRect.y + 8, drawRect.width, drawRect.height}, 0.2f, 8, {0,0,0,100});
 
-        // Glow pour rareté
+        // -----------------------------
+        // Couleur de la carte selon rareté
+        // -----------------------------
         Color baseColor;
-        std::string rarityText;
+        const char* rarityText;
         Color rarityColor;
-
         switch(currentOptions[i].rarity)
         {
             case 0: baseColor = {150,150,150,255}; rarityText="COMMON"; rarityColor={120,120,120,255}; break;
-            case 1: baseColor = {80,150,255,255}; rarityText="RARE"; rarityColor={50,100,255,255}; break;
-            case 2: baseColor = {180,0,180,255}; rarityText="EPIC"; rarityColor={140,0,140,255}; break;
-            case 3: baseColor = {255,200,0,255}; rarityText="LEGENDARY"; rarityColor={200,150,0,255}; break;
+            case 1: baseColor = {80,150,255,255};  rarityText="RARE";   rarityColor={50,120,255,255}; break;
+            case 2: baseColor = {180,0,180,255};   rarityText="EPIC";   rarityColor={150,0,150,255}; break;
+            case 3: baseColor = {255,200,0,255};   rarityText="LEGEND"; rarityColor={200,150,0,255}; break;
+            default: baseColor = {150,150,150,255}; rarityText="COMMON"; rarityColor={120,120,120,255}; break;
         }
 
-        float glow = (sin(time * 3.0f + i) * 0.5f + 0.5f) * 40;
+        float glow = (sin(time*3.0f + i) * 0.5f + 0.5f) * 30;
         Color cardColor = {
             (unsigned char)std::min(255, int(baseColor.r + glow)),
             (unsigned char)std::min(255, int(baseColor.g + glow)),
             (unsigned char)std::min(255, int(baseColor.b + glow)),
             255
         };
+
         DrawRectangleRounded(drawRect, 0.2f, 8, cardColor);
 
-        // Contour de la carte
-        DrawRectangleRoundedLines(drawRect, 0.2f, 8, WHITE);
+        if(hover) DrawRectangleRoundedLines(drawRect, 0.2f, 6, WHITE);
 
-        // ===== Texte de rareté au-dessus du titre avec ombre =====
-        int raritySize = 22;
-        int rarityWidth = MeasureText(rarityText.c_str(), raritySize);
+        // -----------------------------
+        // Texte rareté en haut de la carte avec ombre
+        // -----------------------------
+        int raritySize = 20;
+        int rarityWidth = MeasureText(rarityText, raritySize);
+        DrawText(rarityText, drawRect.x + drawRect.width/2 - rarityWidth/2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); // shadow
+        DrawText(rarityText, drawRect.x + drawRect.width/2 - rarityWidth/2, drawRect.y + 10, raritySize, rarityColor);
 
-        // Ombre
-        DrawText(rarityText.c_str(),
-            drawRect.x + drawRect.width/2 - rarityWidth/2 + 2,
-            drawRect.y + 10 + 2,
-            raritySize,
-            {0,0,0,150});
-        // Texte principal
-        DrawText(rarityText.c_str(),
-            drawRect.x + drawRect.width/2 - rarityWidth/2,
-            drawRect.y + 10,
-            raritySize,
-            rarityColor);
-
-        // ===== Texte principal de la carte =====
-        int titleSize = 30;
+        // -----------------------------
+        // Texte principal (nom & description)
+        // -----------------------------
+        int titleSize = 28;
         int descSize = 18;
-        std::string name = currentOptions[i].name;
-        std::string desc = currentOptions[i].description;
 
-        int titleWidth = MeasureText(name.c_str(), titleSize);
-        int descWidth  = MeasureText(desc.c_str(), descSize);
+        int titleWidth = MeasureText(currentOptions[i].name.c_str(), titleSize);
+        int descWidth  = MeasureText(currentOptions[i].description.c_str(), descSize);
 
-        // Ombre du titre
-        DrawText(name.c_str(),
-            drawRect.x + drawRect.width/2 - titleWidth/2 + 2,
-            drawRect.y + 40 + 2,
-            titleSize,
-            {0,0,0,150});
-        DrawText(name.c_str(),
-            drawRect.x + drawRect.width/2 - titleWidth/2,
-            drawRect.y + 40,
-            titleSize,
-            WHITE);
+        // Ombre pour le titre
+        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width/2 - titleWidth/2 + 2, drawRect.y + 40 + 2, titleSize, BLACK);
+        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width/2 - titleWidth/2, drawRect.y + 40, titleSize, WHITE);
 
-        // Ombre de la description
-        DrawText(desc.c_str(),
-            drawRect.x + drawRect.width/2 - descWidth/2 + 1,
-            drawRect.y + 90 + 1,
-            descSize,
-            {0,0,0,120});
-        DrawText(desc.c_str(),
-            drawRect.x + drawRect.width/2 - descWidth/2,
-            drawRect.y + 90,
-            descSize,
-            LIGHTGRAY);
+        // Ombre pour la description
+        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width/2 - descWidth/2 + 1, drawRect.y + 80 + 1, descSize, BLACK);
+        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width/2 - descWidth/2, drawRect.y + 80, descSize, LIGHTGRAY);
+
+        // -----------------------------
+        // Texte "changement" (preview)
+        // -----------------------------
+        if(currentOptions[i].previewText)
+        {
+            std::string changeText = currentOptions[i].previewText(player);
+            int changeSize = 18;
+            int changeWidth = MeasureText(changeText.c_str(), changeSize);
+            DrawText(changeText.c_str(), drawRect.x + drawRect.width/2 - changeWidth/2 + 1, drawRect.y + 120 + 1, changeSize, BLACK);
+            DrawText(changeText.c_str(), drawRect.x + drawRect.width/2 - changeWidth/2, drawRect.y + 120, changeSize, GREEN);
+        }
     }
 
-    // ===== Titre "LEVEL UP" =====
+    // -----------------------------
+    // Titre général du menu
+    // -----------------------------
     const char* title = "LEVEL UP!";
     int titleSize = 50;
     int titleWidth = MeasureText(title, titleSize);
-    float bounce = sin(time * 4.0f) * 5.0f;
+    float bounce = sin(time*4.0f) * 5.0f;
 
-    // Ombre du titre
-    DrawText(title,
-        screenWidth/2 - titleWidth/2 + 2,
-        y - 120 + bounce + 2,
-        titleSize,
-        {0,0,0,180});
-    // Texte principal
-    DrawText(title,
-        screenWidth/2 - titleWidth/2,
-        y - 120 + bounce,
-        titleSize,
-        {255,215,0,255});
+    // Shadow
+    DrawText(title, screenWidth/2 - titleWidth/2 + 3, y - 120 + bounce + 3, titleSize, BLACK);
+    DrawText(title, screenWidth/2 - titleWidth/2, y - 120 + bounce, titleSize, {255,215,0,255});
 }

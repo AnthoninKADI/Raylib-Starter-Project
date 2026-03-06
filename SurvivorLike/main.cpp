@@ -90,21 +90,24 @@ std::vector<UpgradeOption> allUpgrades =
         "XP Value",
         "+2 XP Value",
         UpgradeXP,
-        1
+        1,
+        [](PlayerStats& p){ return "XP +" + std::to_string(2); }  // juste un exemple
     },
 
     {
         "Move Speed",
         "+5 movement speed",
         UpgradeSpeed,
-        0
+        0,
+        [](PlayerStats& p){ return "Speed " + std::to_string((int)playerSpeed) + " -> " + std::to_string((int)(playerSpeed + 5)); }
     },
 
     {
         "Max HP",
         "+5 max health",
         UpgradeHP,
-        0
+        0,
+        [](PlayerStats& p){ return "HP " + std::to_string((int)playerMaxHP) + " -> " + std::to_string((int)(playerMaxHP + 5)); }
     },
 
     {
@@ -114,7 +117,8 @@ std::vector<UpgradeOption> allUpgrades =
         {
             projectileCooldown *= 0.975f;
         },
-        1
+        1,
+        [](PlayerStats& p){ return "Attack CD " + std::to_string(p.projectileCooldown) + " -> " + std::to_string(p.projectileCooldown*0.975f); }
     },
 
     {
@@ -124,7 +128,8 @@ std::vector<UpgradeOption> allUpgrades =
         {
             projectileSpeed += 5.0f;
         },
-        0
+        0,
+        [](PlayerStats& p){ return "Projectile Speed " + std::to_string((int)projectileSpeed) + " -> " + std::to_string((int)(projectileSpeed+5)); }
     },
 
     {
@@ -136,26 +141,29 @@ std::vector<UpgradeOption> allUpgrades =
             if (playerHP > playerMaxHP)
                 playerHP = playerMaxHP;
         },
-        0
+        0,
+        [](PlayerStats& p){ return "HP " + std::to_string((int)playerHP) + " -> " + std::to_string((int)std::min(playerHP+20, playerMaxHP)); }
     },
+
     {
-        "Extra Projectile",
-        "+1 projectile",
-        [](PlayerStats& player)
-        {
-            projectileCount += 1;
-        },
-        3
+        "More Projectile",
+        "Increase your projectile count",
+        [](PlayerStats& p) { p.projectileCount += 1; },
+        3, 
+        [](PlayerStats& p) { return "Projectiles " + std::to_string(p.projectileCount) + " -> " + std::to_string(p.projectileCount + 1); }
     },
+
     {
         "XP Magnet",
         "XP orbs attract from further",
         [](PlayerStats& player)
         {
-            xpPickupRadius += 50;
+            xpPickupRadius += 10;
         },
-        1
+        1,
+        [](PlayerStats& p){ return "Magnet Radius " + std::to_string(xpPickupRadius) + " -> " + std::to_string(xpPickupRadius + 50); }
     },
+
     {
         "Piercing Shot",
         "Projectiles go through enemies",
@@ -163,8 +171,10 @@ std::vector<UpgradeOption> allUpgrades =
         {
             player.projectilePierce += 1;
         },
-        1
+        2,
+        [](PlayerStats& p){ return "Pierce " + std::to_string(p.projectilePierce) + " -> " + std::to_string(p.projectilePierce + 1); }
     },
+
     {
         "Ricochet",
         "Projectiles bounce to another enemy",
@@ -172,7 +182,8 @@ std::vector<UpgradeOption> allUpgrades =
         {
             projectileRicochet += 1;
         },
-        2
+        2,
+        [](PlayerStats& p){ return "Ricochet " + std::to_string(projectileRicochet) + " -> " + std::to_string(projectileRicochet + 1); }
     }
 };
 
@@ -415,7 +426,7 @@ int main()
         if(upgradeMenu.IsActive())
         {
             upgradeMenu.Update(playerStats);
-            upgradeMenu.Draw();
+            upgradeMenu.Draw(playerStats);
             EndDrawing();
             continue;
         }
