@@ -74,7 +74,7 @@ struct LevelUpText {
 std::vector<LevelUpText> levelUpTexts;
 
 std::vector<Enemy> enemies;
-float enemySpawnInterval = 2.0f;
+float enemySpawnInterval = 0.5f;
 float enemySpawnTimer    = 0.0f;
 float enemySpeed         = 150.0f;
 float enemySize          = 60.0f;
