@@ -17,7 +17,7 @@ void UpgradeMenu::Show(const std::vector<UpgradeOption>& options)
     active = true;
 }
 
-void UpgradeMenu::Update(PlayerStats& player)
+void UpgradeMenu::Update(PlayerStats& player, std::vector<UpgradeOption>& allUpgrades)
 {
     if (!active) return;
 
@@ -35,7 +35,20 @@ void UpgradeMenu::Update(PlayerStats& player)
         Rectangle rect = { startX + i * (cardW + spacing), y, cardW, cardH };
         if (CheckCollisionPointRec(mouse, rect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
+            // Appliquer l'upgrade
             currentOptions[i].applyUpgrade(player);
+
+            // Mettre à jour le niveau dans le pool global
+            for (auto& upgrade : allUpgrades)
+            {
+                if (upgrade.name == currentOptions[i].name)
+                {
+                    upgrade.level++;
+                    currentOptions[i].level = upgrade.level;
+                    break;
+                }
+            }
+
             active = false;
         }
     }
@@ -83,13 +96,13 @@ void UpgradeMenu::Draw(PlayerStats& player)
         // -----------------------------
         // Animation pop / hover
         // -----------------------------
-        float appearAnim = fmin(1.0f, (time*2.0f - i*0.2f)); 
+        float appearAnim = fmin(1.0f, (time * 2.0f - i * 0.2f)); 
         appearAnim = pow(appearAnim, 0.5f);
         float scale = hover ? 1.1f : 0.9f + 0.1f * appearAnim;
 
         Rectangle drawRect = {
-            rect.x - rect.width * (scale-1)/2,
-            rect.y - rect.height * (scale-1)/2,
+            rect.x - rect.width * (scale - 1) / 2,
+            rect.y - rect.height * (scale - 1) / 2,
             rect.width * scale,
             rect.height * scale
         };
@@ -114,7 +127,7 @@ void UpgradeMenu::Draw(PlayerStats& player)
             default: baseColor = {150,150,150,255}; rarityText="COMMON"; rarityColor={120,120,120,255}; break;
         }
 
-        float glow = (sin(time*3.0f + i) * 0.5f + 0.5f) * 30;
+        float glow = (sin(time * 3.0f + i) * 0.5f + 0.5f) * 30;
         Color cardColor = {
             (unsigned char)std::min(255, int(baseColor.r + glow)),
             (unsigned char)std::min(255, int(baseColor.g + glow)),
@@ -131,8 +144,17 @@ void UpgradeMenu::Draw(PlayerStats& player)
         // -----------------------------
         int raritySize = 20;
         int rarityWidth = MeasureText(rarityText, raritySize);
-        DrawText(rarityText, drawRect.x + drawRect.width/2 - rarityWidth/2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); // shadow
-        DrawText(rarityText, drawRect.x + drawRect.width/2 - rarityWidth/2, drawRect.y + 10, raritySize, rarityColor);
+        DrawText(rarityText, drawRect.x + drawRect.width / 2 - rarityWidth / 2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); // shadow
+        DrawText(rarityText, drawRect.x + drawRect.width / 2 - rarityWidth / 2, drawRect.y + 10, raritySize, rarityColor);
+
+        // Niveau en haut à gauche
+        std::string levelText = "Lvl " + std::to_string(currentOptions[i].level);
+        int levelSize = 18;
+        int levelWidth = MeasureText(levelText.c_str(), levelSize);
+
+        // Ombre
+        DrawText(levelText.c_str(), drawRect.x + 8 + 1, drawRect.y + 8 + 1, levelSize, BLACK);
+        DrawText(levelText.c_str(), drawRect.x + 8, drawRect.y + 8, levelSize, rarityColor); // couleur rareté comme rareté
 
         // -----------------------------
         // Texte principal (nom & description)
@@ -143,13 +165,11 @@ void UpgradeMenu::Draw(PlayerStats& player)
         int titleWidth = MeasureText(currentOptions[i].name.c_str(), titleSize);
         int descWidth  = MeasureText(currentOptions[i].description.c_str(), descSize);
 
-        // Ombre pour le titre
-        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width/2 - titleWidth/2 + 2, drawRect.y + 40 + 2, titleSize, BLACK);
-        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width/2 - titleWidth/2, drawRect.y + 40, titleSize, WHITE);
+        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width / 2 - titleWidth / 2 + 2, drawRect.y + 40 + 2, titleSize, BLACK);
+        DrawText(currentOptions[i].name.c_str(), drawRect.x + drawRect.width / 2 - titleWidth / 2, drawRect.y + 40, titleSize, WHITE);
 
-        // Ombre pour la description
-        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width/2 - descWidth/2 + 1, drawRect.y + 80 + 1, descSize, BLACK);
-        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width/2 - descWidth/2, drawRect.y + 80, descSize, LIGHTGRAY);
+        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width / 2 - descWidth / 2 + 1, drawRect.y + 80 + 1, descSize, BLACK);
+        DrawText(currentOptions[i].description.c_str(), drawRect.x + drawRect.width / 2 - descWidth / 2, drawRect.y + 80, descSize, LIGHTGRAY);
 
         // -----------------------------
         // Texte "changement" (preview)
@@ -159,8 +179,8 @@ void UpgradeMenu::Draw(PlayerStats& player)
             std::string changeText = currentOptions[i].previewText(player);
             int changeSize = 18;
             int changeWidth = MeasureText(changeText.c_str(), changeSize);
-            DrawText(changeText.c_str(), drawRect.x + drawRect.width/2 - changeWidth/2 + 1, drawRect.y + 120 + 1, changeSize, BLACK);
-            DrawText(changeText.c_str(), drawRect.x + drawRect.width/2 - changeWidth/2, drawRect.y + 120, changeSize, GREEN);
+            DrawText(changeText.c_str(), drawRect.x + drawRect.width / 2 - changeWidth / 2 + 1, drawRect.y + 120 + 1, changeSize, BLACK);
+            DrawText(changeText.c_str(), drawRect.x + drawRect.width / 2 - changeWidth / 2, drawRect.y + 120, changeSize, GREEN);
         }
     }
 
@@ -170,9 +190,9 @@ void UpgradeMenu::Draw(PlayerStats& player)
     const char* title = "LEVEL UP!";
     int titleSize = 50;
     int titleWidth = MeasureText(title, titleSize);
-    float bounce = sin(time*4.0f) * 5.0f;
+    float bounce = sin(time * 4.0f) * 5.0f;
 
-    // Shadow
-    DrawText(title, screenWidth/2 - titleWidth/2 + 3, y - 120 + bounce + 3, titleSize, BLACK);
-    DrawText(title, screenWidth/2 - titleWidth/2, y - 120 + bounce, titleSize, {255,215,0,255});
+    DrawText(title, screenWidth / 2 - titleWidth / 2 + 3, y - 120 + bounce + 3, titleSize, BLACK);
+    DrawText(title, screenWidth / 2 - titleWidth / 2, y - 120 + bounce, titleSize, {255,215,0,255});
 }
+

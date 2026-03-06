@@ -52,4 +52,5 @@ struct UpgradeOption
     std::function<void(PlayerStats&)> applyUpgrade;
     int rarity;
     std::function<std::string(PlayerStats&)> previewText;
+    int level = 1;
 };

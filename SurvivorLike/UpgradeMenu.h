@@ -10,7 +10,7 @@ public:
     UpgradeMenu(float screenW, float screenH);
 
     void Show(const std::vector<UpgradeOption>& options);
-    void Update(PlayerStats& player);
+    void Update(PlayerStats& player, std::vector<UpgradeOption>& allUpgrades);
     void Draw(PlayerStats& player);
 
     bool IsActive() const { return active; }
