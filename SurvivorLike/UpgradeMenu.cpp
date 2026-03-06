@@ -144,8 +144,8 @@ void UpgradeMenu::Draw(PlayerStats& player)
         // -----------------------------
         int raritySize = 20;
         int rarityWidth = MeasureText(rarityText, raritySize);
-        DrawText(rarityText, drawRect.x + drawRect.width / 2 - rarityWidth / 2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); // shadow
-        DrawText(rarityText, drawRect.x + drawRect.width / 2 - rarityWidth / 2, drawRect.y + 10, raritySize, rarityColor);
+        DrawText(rarityText, drawRect.x  + drawRect.width / 2 - rarityWidth / 2 + 2, drawRect.y + 10 + 2, raritySize, BLACK); 
+        DrawText(rarityText, drawRect.x  + drawRect.width / 2 - rarityWidth / 2, drawRect.y + 10, raritySize, rarityColor);
 
         // Niveau en haut à gauche
         if(currentOptions[i].showLevel) // true sauf heal etc.
@@ -155,8 +155,8 @@ void UpgradeMenu::Draw(PlayerStats& player)
             int lvlWidth = MeasureText(lvlText.c_str(), lvlSize);
 
             // Ombre
-            DrawText(lvlText.c_str(), drawRect.x + 5 + 1, drawRect.y + 5 + 1, lvlSize, BLACK);
-            DrawText(lvlText.c_str(), drawRect.x + 5, drawRect.y + 5, lvlSize, rarityColor);
+            DrawText(lvlText.c_str(), drawRect.x + 5 + 2 + 1, drawRect.y + 5 + 1, lvlSize, BLACK);
+            DrawText(lvlText.c_str(), drawRect.x + 5 + 2, drawRect.y + 5, lvlSize, rarityColor);
         }
 
         // -----------------------------

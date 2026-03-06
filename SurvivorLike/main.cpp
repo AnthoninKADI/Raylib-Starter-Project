@@ -42,6 +42,7 @@ float playerMaxHP = 100.0f;
 float playerHP    = 100.0f;
 float playerInvincibilityTimer = 0.0f;
 bool levelUpPending = false;
+
 void UpgradeSpeed(PlayerStats& player) { playerSpeed += 5; }
 void UpgradeXP(PlayerStats& player) {  xpOrbValue += 2; }
 void UpgradeHP(PlayerStats& player) { playerMaxHP += 5; }
