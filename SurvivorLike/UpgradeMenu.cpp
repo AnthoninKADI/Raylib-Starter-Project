@@ -87,13 +87,17 @@ void UpgradeMenu::Draw()
 
         // Glow pour rareté
         Color baseColor;
+        std::string rarityText;
+        Color rarityColor;
+
         switch(currentOptions[i].rarity)
         {
-            case 0: baseColor = {150,150,150,255}; break; // Common
-            case 1: baseColor = {80,150,255,255}; break;  // Rare
-            case 2: baseColor = {180,0,180,255}; break;   // Epic
-            case 3: baseColor = {255,200,0,255}; break;   // Legendary
+            case 0: baseColor = {150,150,150,255}; rarityText="COMMON"; rarityColor={120,120,120,255}; break;
+            case 1: baseColor = {80,150,255,255}; rarityText="RARE"; rarityColor={50,100,255,255}; break;
+            case 2: baseColor = {180,0,180,255}; rarityText="EPIC"; rarityColor={140,0,140,255}; break;
+            case 3: baseColor = {255,200,0,255}; rarityText="LEGENDARY"; rarityColor={200,150,0,255}; break;
         }
+
         float glow = (sin(time * 3.0f + i) * 0.5f + 0.5f) * 40;
         Color cardColor = {
             (unsigned char)std::min(255, int(baseColor.r + glow)),
@@ -106,7 +110,24 @@ void UpgradeMenu::Draw()
         // Contour de la carte
         DrawRectangleRoundedLines(drawRect, 0.2f, 8, WHITE);
 
-        // ===== Texte avec ombre =====
+        // ===== Texte de rareté au-dessus du titre avec ombre =====
+        int raritySize = 22;
+        int rarityWidth = MeasureText(rarityText.c_str(), raritySize);
+
+        // Ombre
+        DrawText(rarityText.c_str(),
+            drawRect.x + drawRect.width/2 - rarityWidth/2 + 2,
+            drawRect.y + 10 + 2,
+            raritySize,
+            {0,0,0,150});
+        // Texte principal
+        DrawText(rarityText.c_str(),
+            drawRect.x + drawRect.width/2 - rarityWidth/2,
+            drawRect.y + 10,
+            raritySize,
+            rarityColor);
+
+        // ===== Texte principal de la carte =====
         int titleSize = 30;
         int descSize = 18;
         std::string name = currentOptions[i].name;
@@ -118,24 +139,24 @@ void UpgradeMenu::Draw()
         // Ombre du titre
         DrawText(name.c_str(),
             drawRect.x + drawRect.width/2 - titleWidth/2 + 2,
-            drawRect.y + 20 + 2,
+            drawRect.y + 40 + 2,
             titleSize,
-            {0,0,0,150}); // ombre subtile
+            {0,0,0,150});
         DrawText(name.c_str(),
             drawRect.x + drawRect.width/2 - titleWidth/2,
-            drawRect.y + 20,
+            drawRect.y + 40,
             titleSize,
-            WHITE); // texte principal
+            WHITE);
 
         // Ombre de la description
         DrawText(desc.c_str(),
             drawRect.x + drawRect.width/2 - descWidth/2 + 1,
-            drawRect.y + 80 + 1,
+            drawRect.y + 90 + 1,
             descSize,
             {0,0,0,120});
         DrawText(desc.c_str(),
             drawRect.x + drawRect.width/2 - descWidth/2,
-            drawRect.y + 80,
+            drawRect.y + 90,
             descSize,
             LIGHTGRAY);
     }
