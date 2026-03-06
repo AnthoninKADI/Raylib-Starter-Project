@@ -1,11 +1,13 @@
 ﻿#pragma once
+#include <vector>
+
 #include "raylib.h"
 
 class PauseMenu
 {
 public:
     PauseMenu(float screenW, float screenH);
-
+    
     void Update();
     void Draw();
     void Toggle();

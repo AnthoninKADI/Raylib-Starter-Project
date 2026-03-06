@@ -50,27 +50,62 @@ void PauseMenu::Update()
 
 void PauseMenu::DrawButton(const Rectangle& rect, const char* text)
 {
-    Color base = {115,0,140,255};
-    Color hover = {217,51,153,255};
-    Color col = CheckCollisionPointRec(GetMousePosition(), rect) ? hover : base;
+    bool hover = CheckCollisionPointRec(GetMousePosition(), rect);
 
-    DrawRectangleRec(rect, col);
-    DrawRectangleLinesEx(rect, 2, WHITE);
+    float scale = hover ? 1.08f : 1.0f;
 
-    int fontSize = 32;
-    Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 1);
+    Rectangle scaled = {
+        rect.x - (rect.width * (scale - 1) / 2),
+        rect.y - (rect.height * (scale - 1) / 2),
+        rect.width * scale,
+        rect.height * scale
+    };
+
+    Color base = {40,40,60,255};
+    Color hoverCol = {60,60,90,255};
+
+    DrawRectangleRounded(scaled, 0.3f, 8, hover ? hoverCol : base);
+
+    if (hover)
+        DrawRectangleRoundedLines(scaled, 0.3f, 8, WHITE);
+
+    int fontSize = 30;
+    int textWidth = MeasureText(text, fontSize);
+
     DrawText(text,
-             rect.x + rect.width/2 - textSize.x/2,
-             rect.y + rect.height/2 - textSize.y/2,
-             fontSize, WHITE);
+        scaled.x + scaled.width/2 - textWidth/2,
+        scaled.y + scaled.height/2 - fontSize/2,
+        fontSize,
+        WHITE);
 }
 
 void PauseMenu::Draw()
 {
     if(!isPaused) return;
 
+    for(int y=0;y<screenHeight;y++){
+        float t = (float)y/screenHeight;
+        Color col = {
+            (unsigned char)(10 + 20*t),
+            (unsigned char)(10 + 20*t),
+            (unsigned char)(30 + 60*t),
+            255
+        };
+        DrawLine(0,y,screenWidth,y,col);
+    }
+    
     DrawRectangle(0,0,screenWidth,screenHeight,Color{0,0,0,150});
 
+    const char* title = "GAME PAUSED";
+    int fontSize = 70;
+    int textWidth = MeasureText(title, fontSize);
+
+    DrawText(title,
+             screenWidth/2 - textWidth/2,
+             screenHeight/6,
+             fontSize,
+             WHITE);
+    
     DrawButton(playButton,"Play");
     DrawButton(settingsButton,"Settings");
     DrawButton(backButton,"Back to Menu");

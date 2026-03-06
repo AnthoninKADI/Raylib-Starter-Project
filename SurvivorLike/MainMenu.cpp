@@ -27,15 +27,15 @@ MainMenu::MainMenu(float sw, float sh)
 
     characters = {
         { "Archer", "Balanced fighter", LoadTexture("assets/textures/Archer.png"),
-          {400.0f, 0.0f, 10.0f, 1.5f, 100.0f, 1, 0.0f, 1} },
+          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
         { "Warrior", "High HP and damage", LoadTexture("assets/textures/AuraPlayer.png"),
-          {300.0f, 0.0f, 20.0f, 2.0f, 200.0f, 1, 0.0f, 1} },
+          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
         { "Rogue", "Fast and agile", LoadTexture("assets/textures/AxePlayer.png"),
-          {500.0f, 0.0f, 8.0f, 1.0f, 80.0f, 1, 0.0f, 1} },
+          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
         { "Mage", "Strong ranged attacks", LoadTexture("assets/textures/Mage.png"),
-          {350.0f, 0.0f, 15.0f, 1.2f, 70.0f, 1, 5.0f, 1} },
+          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
         { "Electric", "Strong ranged attacks", LoadTexture("assets/textures/LightningMage.png"),
-                {350.0f, 0.0f, 15.0f, 1.2f, 70.0f, 1, 5.0f, 1} }
+                {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} }
     };
 
     selectedCharacter = 0;
@@ -143,7 +143,7 @@ void MainMenu::Draw()
     }
 
     if(state == MenuState::Main){
-        const char* title = "VAMPIRE SURVIVOR";
+        const char* title = "RUNIC SURVIVOR";
         float pulse = 1.0f + 0.05f * sin(titlePulse * 2.5f);
         int fontSize = (int)(80 * pulse);
         int textWidth = MeasureText(title,fontSize);
@@ -151,7 +151,7 @@ void MainMenu::Draw()
         DrawText(title, screenWidth/2 - textWidth/2, 140, fontSize, WHITE);
 
         DrawFancyButton(playButton,"Play");
-        DrawFancyButton(charactersButton,"Characters");
+        DrawFancyButton(charactersButton,"Skins");
         DrawFancyButton(optionsButton,"Options");
         DrawFancyButton(quitButton,"Quit");
     }
@@ -164,7 +164,7 @@ void MainMenu::Draw()
         if(CheckCollisionPointRec(GetMousePosition(),backButton))
             DrawRectangleLinesEx(backButton,3,WHITE);
         DrawText("<",backButton.x+12,backButton.y+5,30,WHITE);
-        DrawText("Choose Your Character", panel.x+40, panel.y+30, 35, WHITE);
+        DrawText("Select Your Skin", panel.x+40, panel.y+30, 35, WHITE);
 
         Rectangle scrollArea = { panel.x+40, panel.y+90, panel.width-80, panel.height-130 };
         BeginScissorMode((int)scrollArea.x,(int)scrollArea.y,(int)scrollArea.width,(int)scrollArea.height);

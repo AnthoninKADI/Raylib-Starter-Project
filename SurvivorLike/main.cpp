@@ -35,7 +35,7 @@ float xpToLevel   = 20.0f + pow(playerLevel,2.0f)*12.0f;
 float xpOrbValue  = 10.0f;
 float xpPickupRadius = 120.0f;
 int projectileCount = 1;
-int projectilePierce = 1;
+int projectilePierce = 0;
 int projectileRicochet = 0;
 
 float playerMaxHP = 100.0f;
