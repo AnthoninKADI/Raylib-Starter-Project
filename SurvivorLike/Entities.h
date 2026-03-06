@@ -53,4 +53,5 @@ struct UpgradeOption
     int rarity;
     std::function<std::string(PlayerStats&)> previewText;
     int level = 1;
+    bool showLevel;
 };

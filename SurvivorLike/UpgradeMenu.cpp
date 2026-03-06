@@ -148,13 +148,16 @@ void UpgradeMenu::Draw(PlayerStats& player)
         DrawText(rarityText, drawRect.x + drawRect.width / 2 - rarityWidth / 2, drawRect.y + 10, raritySize, rarityColor);
 
         // Niveau en haut à gauche
-        std::string levelText = "Lvl " + std::to_string(currentOptions[i].level);
-        int levelSize = 18;
-        int levelWidth = MeasureText(levelText.c_str(), levelSize);
+        if(currentOptions[i].showLevel) // true sauf heal etc.
+        {
+            std::string lvlText = "Lvl " + std::to_string(currentOptions[i].level);
+            int lvlSize = 18;
+            int lvlWidth = MeasureText(lvlText.c_str(), lvlSize);
 
-        // Ombre
-        DrawText(levelText.c_str(), drawRect.x + 8 + 1, drawRect.y + 8 + 1, levelSize, BLACK);
-        DrawText(levelText.c_str(), drawRect.x + 8, drawRect.y + 8, levelSize, rarityColor); // couleur rareté comme rareté
+            // Ombre
+            DrawText(lvlText.c_str(), drawRect.x + 5 + 1, drawRect.y + 5 + 1, lvlSize, BLACK);
+            DrawText(lvlText.c_str(), drawRect.x + 5, drawRect.y + 5, lvlSize, rarityColor);
+        }
 
         // -----------------------------
         // Texte principal (nom & description)
