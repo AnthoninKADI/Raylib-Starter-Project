@@ -29,12 +29,12 @@ UpgradeMenu upgradeMenu(screenWidth, screenHeight);
 bool levelJustIncreased = false; 
 
 float playerSpeed = 400.0f;
-float playerSize  = 120.0f;
+float playerSize  = 65.0f;
 int playerLevel   = 1;
 float playerXP    = 0;
 float xpToLevel   = 20.0f + pow(playerLevel,2.0f)*12.0f;
 float xpOrbValue  = 10.0f;
-float xpPickupRadius = 120.0f;
+float xpPickupRadius = 80.0f;
 int projectileCount = 1;
 int projectilePierce = 0;
 int projectileRicochet = 0;
@@ -55,7 +55,7 @@ std::vector<UpgradeOption> finalUpgrades;
 float finalSurvivalTime = 0.0f;
 
 void UpgradeSpeed(PlayerStats& player) { playerSpeed += 5; }
-void UpgradeXP(PlayerStats& player) {  xpOrbValue += 2; }
+void UpgradeXP(PlayerStats& player) {  xpOrbValue += 10; }
 void UpgradeHP(PlayerStats& player) { playerMaxHP += 5; }
 
 float levelUpDuration = 2.0f;
@@ -102,7 +102,7 @@ std::vector<UpgradeOption> allUpgrades =
         "+2 XP Value",
         UpgradeXP,
         1,
-        [](PlayerStats& p){ return "XP +" + std::to_string(2); },
+        [](PlayerStats& p){ return "XP +" + std::to_string(10); },
         1 ,
         true
     },
@@ -299,9 +299,9 @@ void ResetGame()
     gameTime = 0.0f;
     
     playerSpeed = 400.0f;
-    playerSize  = 120.0f;
+    playerSize  = 65.0f;
     xpOrbValue  = 10.0f;
-    xpPickupRadius = 120.0f;
+    xpPickupRadius = 80.0f;
     projectileCount = 1;
 
     playerMaxHP = 100.0f;
@@ -323,19 +323,14 @@ void ResetGame()
 
 void DrawGameOverScreen(bool &inGame)
 {
-    // -----------------------------
-    // Titre principal
-    // -----------------------------
+
     const char* title = "YOU DIED";
     int titleSize = 64;
     int titleWidth = MeasureText(title, titleSize);
     // Ombre pour le titre
     DrawText(title, screenWidth/2 - titleWidth/2 + 4, 60 + 4, titleSize, BLACK);
     DrawText(title, screenWidth/2 - titleWidth/2, 60, titleSize, RED);
-
-    // -----------------------------
-    // Cartes statistiques (Time / Kills / Level)
-    // -----------------------------
+    
     struct StatCard { std::string text; Color color; };
     std::vector<StatCard> stats = {
         { "Time Survived: " + std::to_string((int)finalSurvivalTime) + "s", {50,200,255,255} },
@@ -352,37 +347,26 @@ void DrawGameOverScreen(bool &inGame)
     {
         float cardX = screenWidth/2 - cardWidth/2;
         float cardY = startY + i*(cardHeight + spacingY);
-
-        // Fond de la carte semi-transparent et arrondi
+        
         DrawRectangleRounded({cardX, cardY, cardWidth, cardHeight}, 0.2f, 6, {20,20,20,180});
         DrawRectangleRoundedLines({cardX, cardY, cardWidth, cardHeight}, 0.2f, 4, WHITE);
 
-        // Texte centré avec ombre
         int textSize = 28;
         int textWidth = MeasureText(stats[i].text.c_str(), textSize);
-
-        // Ombre
+        
         DrawText(stats[i].text.c_str(), cardX + cardWidth/2 - textWidth/2 + 2, cardY + 10 + 2, textSize, BLACK);
-
-        // Texte principal
+        
         DrawText(stats[i].text.c_str(), cardX + cardWidth/2 - textWidth/2, cardY + 10, textSize, stats[i].color);
     }
-
-    // -----------------------------
-    // Rectangle scrollable pour les upgrades
-    // -----------------------------
+    
     float rectWidth  = 520;
-    float rectHeight = 450; // un peu plus grand pour contenir plus d'upgrades
+    float rectHeight = 450; 
     float rectX = screenWidth/2 - rectWidth/2;
     float rectY = startY + stats.size() * (cardHeight + spacingY) + 30;
-
-    // Fond et bordure du rectangle
+    
     DrawRectangleRounded({rectX, rectY, rectWidth, rectHeight}, 0.2f, 8, {50,50,50,200});
     DrawRectangleRoundedLines({rectX, rectY, rectWidth, rectHeight}, 0.2f, 8, WHITE);
-
-    // -----------------------------
-    // Gestion du scroll
-    // -----------------------------
+    
     static float scrollOffset = 0.0f;
     float spacing = 35.0f;
     float maxContentHeight = finalUpgrades.size() * spacing + 20;
@@ -402,33 +386,27 @@ void DrawGameOverScreen(bool &inGame)
 
         std::string upText = u.name + " - Lvl " + std::to_string(u.level);
         int textWidth = MeasureText(upText.c_str(), 24);
-
-        // Couleur rareté
+        
         Color rarityColor;
         switch(u.rarity)
         {
-            case 0: rarityColor = {120,120,120,255}; break; // COMMON
-            case 1: rarityColor = {50,120,255,255};  break; // RARE
-            case 2: rarityColor = {150,0,150,255};  break; // EPIC
-            case 3: rarityColor = {200,150,0,255};  break; // LEGEND
+            case 0: rarityColor = {120,120,120,255}; break; 
+            case 1: rarityColor = {50,120,255,255};  break; 
+            case 2: rarityColor = {150,0,150,255};  break; 
+            case 3: rarityColor = {200,150,0,255};  break; 
             default: rarityColor = WHITE; break;
         }
-
-        // Ombre
+        
         DrawText(upText.c_str(), rectX + rectWidth/2 - textWidth/2 + 2, startUpgradeY + 2, 24, BLACK);
         DrawText(upText.c_str(), rectX + rectWidth/2 - textWidth/2, startUpgradeY, 24, rarityColor);
 
         startUpgradeY += spacing;
     }
-
-    // -----------------------------
-    // Bouton Back to Menu avec hover
-    // -----------------------------
+    
     Rectangle backButton = { screenWidth/2 - 150, screenHeight - 100, 300, 60 };
     Vector2 mousePos = GetMousePosition();
     bool hover = CheckCollisionPointRec(mousePos, backButton);
-
-    // Animation subtile sur le hover
+    
     float scale = hover ? 1.05f : 1.0f;
     Rectangle drawRect = {
         backButton.x - backButton.width*(scale-1)/2,
@@ -457,8 +435,7 @@ void DrawGameOverScreen(bool &inGame)
     const char* btnText = "Back to Menu";
     int textSize = 30;
     int textWidth = MeasureText(btnText, textSize);
-
-    // Ombre du texte
+    
     DrawText(btnText, drawRect.x + drawRect.width/2 - textWidth/2 + 2,
                       drawRect.y + drawRect.height/2 - textSize/2 + 2, textSize, BLACK);
     DrawText(btnText, drawRect.x + drawRect.width/2 - textWidth/2,

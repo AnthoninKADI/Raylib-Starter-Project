@@ -26,16 +26,16 @@ MainMenu::MainMenu(float sw, float sh)
     backButton = { 30, 30, 40, 40 };
 
     characters = {
-        { "Archer", "Balanced fighter", LoadTexture("assets/textures/Archer.png"),
+        { "Mushroom", "Little creature who move fast and have high accuracy", LoadTexture("assets/textures/4.png"),
+          {500.0f, 0.0f, 10.0f, 2.0f, 75.0f, 1, 0.0f, 1} },
+        { "Skeleton", "Light armor but cute", LoadTexture("assets/textures/1.png"),
+          {450.0f, 0.0f, 10.0f, 1.75f, 50.0f, 1, 0.0f, 1} },
+        { "Spy", "We don't know him but we know for sure that he is strong", LoadTexture("assets/textures/2.png"),
           {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
-        { "Warrior", "High HP and damage", LoadTexture("assets/textures/AuraPlayer.png"),
-          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
-        { "Rogue", "Fast and agile", LoadTexture("assets/textures/AxePlayer.png"),
-          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
-        { "Mage", "Strong ranged attacks", LoadTexture("assets/textures/Mage.png"),
-          {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} },
-        { "Electric", "Strong ranged attacks", LoadTexture("assets/textures/LightningMage.png"),
-                {400.0f, 0.0f, 10.0f, 2.0f, 100.0f, 1, 0.0f, 1} }
+        { "Goblin", "Small creature good at Stealing", LoadTexture("assets/textures/3.png"),
+          {400.0f, 0.0f, 10.0f, 2.0f, 75.0f, 1, 0.0f, 1} },
+        { "Soldier 117", "After some intergalactical disaster, he is back to help", LoadTexture("assets/textures/5.png"),
+                {300.0f, 0.0f, 5.0f, 2.0f, 100.0f, 2, 0.0f, 1} }
     };
 
     selectedCharacter = 0;
@@ -188,7 +188,7 @@ void MainMenu::Draw()
             else if(hover)
                 DrawRectangleRoundedLines(card,0.15f,10,LIGHTGRAY);
 
-            Rectangle avatar = {card.x+20,card.y+20,180,180};
+            Rectangle avatar = {card.x+20,card.y+20,130,130};
             DrawTexturePro(characters[i].texture,
                 {0,0,(float)characters[i].texture.width,(float)characters[i].texture.height},
                 {avatar.x,avatar.y,avatar.width,avatar.height},
