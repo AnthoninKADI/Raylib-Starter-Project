@@ -2,9 +2,7 @@
 #include "Enemy.h"
 #include "DoomLike.h"
 #include "raymath.h"
-#include "rlgl.h"
 #include <algorithm>
-#include <cmath>
 
 Player::Player(Level*l,std::vector<Turret*>& turs):level(l),turrets(turs)
 {
@@ -93,6 +91,9 @@ void Player::Update(float dt)
     for(auto&l:lasers)l.life-=dt;
     lasers.erase(std::remove_if(lasers.begin(),lasers.end(),
         [](auto&l){return l.life<=0;}),lasers.end());
+
+    // 🔴 flash rouge diminution
+    if(damageFlash > 0) damageFlash -= dt;
 }
 
 void Player::Shoot()
@@ -135,21 +136,8 @@ void Player::Shoot()
             return;
         }
 
-        if(p.y <= floorY)
-        {
-            p.y = floorY;
-            impacts.push_back({p, 0.25f});
-            lasers.push_back({start, p, 0.08f});
-            return;
-        }
-
-        if(p.y >= ceilingY)
-        {
-            p.y = ceilingY;
-            impacts.push_back({p, 0.25f});
-            lasers.push_back({start, p, 0.08f});
-            return;
-        }
+        if(p.y <= floorY){p.y = floorY; impacts.push_back({p, 0.25f}); lasers.push_back({start,p,0.08f}); return;}
+        if(p.y >= ceilingY){p.y = ceilingY; impacts.push_back({p, 0.25f}); lasers.push_back({start,p,0.08f}); return;}
     }
 }
 
@@ -175,25 +163,14 @@ void Player::DrawGun()
     rlPopMatrix();
 }
 
-void Player::DrawLasers()
-{
-    for(auto&l:lasers) 
-        DrawCylinderEx(l.start,l.end,0.03f,0.03f,6,Color{0,255,255,200});
-}
-
-void Player::DrawImpacts()
-{
-    for(auto&i:impacts) 
-        DrawSphere(i.pos,0.08f,RED);
-}
-
+void Player::DrawLasers(){for(auto&l:lasers) DrawCylinderEx(l.start,l.end,0.03f,0.03f,6,Color{0,255,255,200});}
+void Player::DrawImpacts(){for(auto&i:impacts) DrawSphere(i.pos,0.08f,RED);}
 void Player::DrawHpBar()
 {
     int w = 200; int h = 20; int x = 20; int y = GetScreenHeight()-40;
     DrawRectangle(x-2,y-2,w+4,h+4,BLACK);
     DrawRectangle(x,y,w*(hp/(float)maxHp),h,RED);
 }
-
 void Player::DrawAmmoUI()
 {
     int x = 20; int y = GetScreenHeight()-70;

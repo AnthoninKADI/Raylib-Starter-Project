@@ -22,7 +22,6 @@ void DrawMinimap(const Game& game)
     DrawRectangle(startX-4,startY-4,mapSize+8,mapSize+8,BLACK);
     DrawRectangle(startX,startY,mapSize,mapSize,DARKGRAY);
 
-    // murs
     for(int z=0; z<Level::H; z++)
         for(int x=0; x<Level::W; x++)
             if(game.level.grid[z][x]==1)
@@ -33,43 +32,25 @@ void DrawMinimap(const Game& game)
                 DrawRectangle(rx,ry,cellSize,cellSize,GRAY);
             }
 
-    // player
     float px = startX + game.player.pos.x*scale;
     float pz = startY + game.player.pos.z*scale;
-
     float angle = game.player.yaw;
     float size = 10.0f;
-
     Vector2 tip = { px + sinf(angle)*size, pz + cosf(angle)*size };
     Vector2 left= { px + sinf(angle+2.5f)*size*0.6f, pz + cosf(angle+2.5f)*size*0.6f };
     Vector2 right={ px + sinf(angle-2.5f)*size*0.6f, pz + cosf(angle-2.5f)*size*0.6f };
-
     DrawTriangle(tip,left,right,BLUE);
 
-    // turrets
-    for(auto& t: game.turrets)
-        if(t.IsAlive())
-        {
-            int tx=startX+t.pos.x*scale;
-            int tz=startY+t.pos.z*scale;
-            DrawCircle(tx,tz,6,RED);
-        }
+    for(auto& t: game.turrets) if(t.IsAlive()){ int tx=startX+t.pos.x*scale; int tz=startY+t.pos.z*scale; DrawCircle(tx,tz,6,RED); }
+    for(auto& pack: game.healthPacks) if(pack.active){ int hx=startX+pack.pos.x*scale; int hz=startY+pack.pos.z*scale; DrawCircle(hx,hz,5,GREEN); }
+    for(auto& pack: game.ammoPacks) if(pack.active){ int hx=startX+pack.pos.x*scale; int hz=startY+pack.pos.z*scale; DrawCircle(hx,hz,5,YELLOW); }
+}
 
-    // health packs
-    for(auto& pack: game.healthPacks)
-        if(pack.active)
-        {
-            int hx=startX+pack.pos.x*scale;
-            int hz=startY+pack.pos.z*scale;
-            DrawCircle(hx,hz,5,GREEN);
-        }
-
-    // ammo packs
-    for(auto& pack: game.ammoPacks)
-        if(pack.active)
-        {
-            int hx=startX+pack.pos.x*scale;
-            int hz=startY+pack.pos.z*scale;
-            DrawCircle(hx,hz,5,YELLOW);
-        }
+void DrawDamageFlash(const Player& player)
+{
+    if(player.damageFlash <= 0) return;
+    float alpha = player.damageFlash / 0.4f;
+    alpha = Clamp(alpha, 0.0f, 1.0f);
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+        Color{255, 0, 0, (unsigned char)(150 * alpha)});
 }

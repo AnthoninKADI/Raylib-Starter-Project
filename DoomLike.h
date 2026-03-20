@@ -197,10 +197,10 @@ public:
                 t.Update(dt, player.pos, projectiles, level);
 
             for(auto&p : projectiles)
-                if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius)
-                {
-                    player.hp-=10;
-                    p.life=0;
+                if(Vector3Distance(player.pos,p.pos) < player.radius + p.radius) { 
+                    player.hp -= 10; 
+                    player.damageFlash = 0.2f;   
+                    p.life = 0; 
                 }
 
             CheckHealthPacks();
@@ -229,6 +229,7 @@ public:
             player.DrawAmmoUI();
             DrawCrosshair(6,2);
             DrawMinimap(*this);
+            DrawDamageFlash(player);
 
             EndDrawing();
         }

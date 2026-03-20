@@ -1,7 +1,6 @@
 #pragma once
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
 #include <vector>
 
 class Level;
@@ -51,6 +50,8 @@ public:
     int ammoInClip = 10;
     int clipSize = 10;
     int ammoStock = 30;
+    
+    float damageFlash = 0.0f;
 
     Player(Level*l,std::vector<Turret*>& turs);
 
