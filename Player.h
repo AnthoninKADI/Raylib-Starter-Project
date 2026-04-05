@@ -44,6 +44,11 @@ public:
     std::vector<Impact> impacts;
     std::vector<Laser> lasers;
 
+    // Gun
+    Model gunModel;
+    float gunScale = 0.1f;  
+    Vector3 gunOffset = {0.0f, -0.25f, 0.6f};  
+
     int hp=100;
     int maxHp=100;
     

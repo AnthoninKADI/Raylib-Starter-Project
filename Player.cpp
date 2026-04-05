@@ -155,11 +155,30 @@ void Player::Reload()
 void Player::DrawGun()
 {
     rlPushMatrix();
+    
     rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
-    rlRotatef(RAD2DEG*yaw,0,1,0);
-    rlRotatef(RAD2DEG*-pitch,1,0,0);
-    rlTranslatef(0,-0.25f,0.6f);
-    DrawCube({0,0,0},0.15f,0.2f,0.4f,DARKGRAY);
+    
+    rlRotatef(RAD2DEG * yaw, 0, 1, 0);  
+    rlRotatef(RAD2DEG * -pitch, 1, 0, 0); 
+    
+    float adjustedGunOffsetY = gunOffset.y;
+    
+    if (camHeight < standHeight) {
+        adjustedGunOffsetY -= 0.15f;  
+    }
+
+    rlTranslatef(gunOffset.x, adjustedGunOffsetY, gunOffset.z);
+
+    rlRotatef(90.0f, 0, 1, 0);  
+
+    rlRotatef(-90.0f, 1, 0, 0); 
+
+    Color brightColor = WHITE;
+    brightColor.r = 255;
+    brightColor.g = 192;
+    brightColor.b = 203;
+    DrawModel(gunModel, {0,0,0}, gunScale, brightColor);
+
     rlPopMatrix();
 }
 

@@ -17,6 +17,8 @@ public:
     static constexpr int H = 10;
     static constexpr float CELL = 2.0f;
     static constexpr float CEILING_Y = 3.0f;
+    
+    Model gunModel;
 
     int grid[H][W] = {
         {1,1,1,1,1,1,1,1,1,1},
@@ -185,6 +187,10 @@ public:
         DisableCursor();
         SetTargetFPS(60);
 
+        //Gun
+        player.gunModel = LoadModel("assets/gun.glb");
+        //player.gunScale = 0.1f; 
+        
         level.Load();
 
         while(!WindowShouldClose())
