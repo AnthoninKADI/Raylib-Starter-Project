@@ -118,9 +118,15 @@ public:
     Level level;
 
     std::vector<Turret> turrets = {
-        {{7.5f, 0.25f, 15.5f}},
-        {{8.0f, 0.25f, 12.5f}},
-        {{5.0f, 0.25f, 8.0f}}
+        {{2.51f, 0.25f, 17.38f}},
+        {{5.46f, 0.25f, 17.38f}},
+        {{11.08f, 0.25f, 11.07f}},
+        {{14.91f, 0.25f, 16.83f}},
+        {{17.05f, 0.25f, 11.24f}},
+        {{11.43f, 0.25f, 3.64f}},
+        {{14.82f, 0.25f, 3.64f}},
+        {{17.06f, 0.25f, 3.64f}},
+        {{11.45f, 0.25f, 6.61f}}
     };
 
     std::vector<Turret*> turretPtrs;
@@ -130,13 +136,16 @@ public:
     std::vector<Projectile> projectiles;
 
     std::vector<HealthPack> healthPacks = {
-        {{3.5f, 0.10f, 3.5f}},
-        {{6.5f, 0.10f, 10.5f}}
+        {{4.33f, 0.10f, 12.40f}},
+        {{9.0f, 0.10f, 14.22f}},
+        {{15.72f, 0.10f, 14.23f}},
+        {{15.03f, 0.10f, 7.05f}}
     };
 
     std::vector<AmmoPack> ammoPacks = {
-        {{4.5f, 0.0f, 4.5f}, 0.3f, 10, true},
-        {{7.0f, 0.0f, 7.0f}, 0.3f, 15, true}
+        {{5.89f, 0.0f, 14.24f}, 0.3f, 10, true},
+        {{16.76f, 0.0f, 16.93f}, 0.3f, 10, true},
+        {{15.07f, 0.0f, 9.10f}, 0.3f, 15, true}
     };
 
     Game()
