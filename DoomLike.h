@@ -66,49 +66,45 @@ public:
         {
             Vector3 p = {x * CELL + CELL / 2, 0, z * CELL + CELL / 2};
 
-            // Dessiner le sol
+            
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = floorTex;
             DrawModelEx(cube, {p.x, 0, p.z}, {0, 1, 0}, 0, {CELL, 0.02f, CELL}, WHITE);
 
-            // Dessiner le plafond
+            
             cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = roofTex;
             DrawModelEx(cube, {p.x, CEILING_Y, p.z}, {0, 1, 0}, 0, {CELL, 0.02f, CELL}, WHITE);
 
-            // Dessiner le mur si c'est un mur
+            
             if(grid[z][x])
             {
                 cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = wallTex;
                 DrawModelEx(cube, {p.x, CEILING_Y / 2, p.z}, {0, 1, 0}, 0, {CELL, CEILING_Y, CELL}, WHITE);
             }
-
-            // Si une boîte de munitions est à cet emplacement
-            if (grid[z][x] == 2) // Condition pour la boîte de munitions
+            
+            if (grid[z][x] == 2) 
             {
-                DrawAmmoBox({p.x, 0.25f, p.z}, 0.2f, {0, 1, 0}, 45.0f); // Taille et rotation de la boîte de munitions
+                DrawAmmoBox({p.x, 0.25f, p.z}, 0.2f, {0, 1, 0}, 45.0f); 
             }
-
-            // Si une boîte de soin est à cet emplacement
-            if (grid[z][x] == 3) // Condition pour la boîte de soin
+            if (grid[z][x] == 3) 
             {
-                DrawHealBox({p.x, 0.25f, p.z}, 0.2f, {1, 0, 0}, 30.0f, 0.4f); // Taille et rotation de la boîte de soin
+                DrawHealBox({p.x, 0.25f, p.z}, 0.2f, {1, 0, 0}, 30.0f, 0.4f); 
             }
         }
     }
 
     void DrawAmmoBox(Vector3 position, float scale, Vector3 rotationAxis, float rotationAngle)
     {
-        // Appliquer une échelle et une rotation sur la boîte de munitions
         DrawModelEx(ammoBoxModel, position, rotationAxis, rotationAngle, {scale, scale, scale}, WHITE);
     }
 
     void DrawHealBox(Vector3 position, float scale, Vector3 rotationAxis, float rotationAngle, float sphereSize)
     {
-        // Appliquer une échelle et une rotation sur la boîte de soin
+        
         DrawModelEx(healBoxModel, position, rotationAxis, rotationAngle, {scale, scale, scale}, WHITE);
         
-        // Dessiner la sphère rouge flottante au-dessus de la boîte de soin
-        Vector3 spherePosition = {position.x, position.y + 0.5f, position.z};  // Légèrement au-dessus
-        DrawSphere(spherePosition, sphereSize, RED); // Dessiner la sphère rouge avec la taille donnée
+       
+        Vector3 spherePosition = {position.x, position.y + 0.5f, position.z};  
+        DrawSphere(spherePosition, sphereSize, RED); 
     }
 };
 
@@ -134,13 +130,13 @@ public:
     std::vector<Projectile> projectiles;
 
     std::vector<HealthPack> healthPacks = {
-        {{3.5f, 0.25f, 3.5f}},
-        {{6.5f, 0.25f, 10.5f}}
+        {{3.5f, 0.10f, 3.5f}},
+        {{6.5f, 0.10f, 10.5f}}
     };
 
     std::vector<AmmoPack> ammoPacks = {
-        {{4.5f, 0.25f, 4.5f}, 0.3f, 10, true},
-        {{7.0f, 0.25f, 7.0f}, 0.3f, 15, true}
+        {{4.5f, 0.0f, 4.5f}, 0.3f, 10, true},
+        {{7.0f, 0.0f, 7.0f}, 0.3f, 15, true}
     };
 
     Game()
@@ -207,13 +203,6 @@ public:
         }
     }
 
-    // void DrawHealthPacks()
-    // {
-    //     for (auto& pack : healthPacks)
-    //         if (pack.active)
-    //             DrawCube(pack.pos, 0.4f, 0.4f, 0.4f, GREEN);
-    // }
-
     void DrawAmmoPacks()
     {
         for (auto& pack : ammoPacks)
@@ -225,7 +214,7 @@ public:
     {
         for (auto& pack : healthPacks)
             if (pack.active)
-                level.DrawHealBox(pack.pos, 0.3f, {1, 0, 0}, -90.0f, 0.05f); // Dessiner la boîte de soin avec échelle et rotation + sphère flottante
+                level.DrawHealBox(pack.pos, 0.3f, {1, 0, 0}, -90.0f, 0.05f); 
     }
 
     void Run()
@@ -234,10 +223,9 @@ public:
         DisableCursor();
         SetTargetFPS(60);
 
-        // Charger le modèle du gun
-        player.gunModel = LoadModel("assets/gun.glb");
 
-        // Charger le niveau
+        player.gunModel = LoadModel("assets/gun.glb");
+        
         level.Load();
 
         while (!WindowShouldClose())
@@ -269,7 +257,6 @@ public:
             BeginMode3D(player.cam);
                 level.Draw();
                 for (auto& t : turrets) t.Draw();
-                //DrawHealthPacks();
                 DrawAmmoPacks(); 
                 DrawHealPacks(); 
                 player.DrawLasers();
@@ -284,6 +271,7 @@ public:
             player.DrawAmmoUI();
             DrawCrosshair(6, 2);
             DrawMinimap(*this);
+            DrawPlayerCoordinates(player.pos);
             DrawDamageFlash(player);
 
             EndDrawing();

@@ -188,7 +188,7 @@ void Player::DrawHpBar()
 {
     int w = 200; int h = 20; int x = 20; int y = GetScreenHeight()-40;
     DrawRectangle(x-2,y-2,w+4,h+4,BLACK);
-    DrawRectangle(x,y,w*(hp/(float)maxHp),h,RED);
+    DrawRectangle(x,y,w*(hp/(float)maxHp),h,GREEN);
 }
 void Player::DrawAmmoUI()
 {

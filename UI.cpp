@@ -54,3 +54,15 @@ void DrawDamageFlash(const Player& player)
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
         Color{255, 0, 0, (unsigned char)(150 * alpha)});
 }
+
+void DrawPlayerCoordinates(Vector3 playerPos)
+{
+    char coordsText[50];
+    snprintf(coordsText, sizeof(coordsText), "X: %.2f / Y: %.2f / Z: %.2f", playerPos.x, playerPos.y, playerPos.z);
+    
+    int textX = GetScreenWidth() - 210; 
+    int textY = 220;  
+    int fontSize = 15;  
+    
+    DrawText(coordsText, textX, textY, fontSize, WHITE);
+}

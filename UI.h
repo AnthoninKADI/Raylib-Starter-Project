@@ -8,3 +8,4 @@ class Game;
 void DrawCrosshair(int size, int thickness);
 void DrawMinimap(const Game& game);
 void DrawDamageFlash(const Player& player);
+void DrawPlayerCoordinates(Vector3 playerPos);
