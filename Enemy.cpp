@@ -37,8 +37,69 @@ void Turret::Update(float dt,Vector3 playerPos,std::vector<Projectile>& projecti
         [](auto&p){return p.life<=0;}),projectiles.end());
 }
 
-void Turret::Draw()const
+void Turret::Draw(Vector3 playerPos) const
 {
-    if(!IsAlive()) return;
-    DrawCube(pos,0.3f,1.5f,0.5f,hitFlash>0?ORANGE:BLUE);
+    if (!IsAlive()) return;
+
+    // === Direction vers le joueur ===
+    Vector3 dir = Vector3Subtract(playerPos, pos);
+    dir.y = 0;
+    dir = Vector3Normalize(dir);
+
+    // === Couleurs ===
+    Color baseColor = DARKGRAY;
+    Color bodyColor = (hitFlash > 0) ? ORANGE : GRAY;
+    Color gunColor  = BLACK;
+    Color eyeColor  = (fireCooldown <= 0) ? RED : MAROON;
+
+    // === BASE (socle) ===
+    DrawCylinder(
+        {pos.x, pos.y - 0.25f, pos.z},
+        0.5f, 0.5f,
+        0.2f,
+        16,
+        baseColor
+    );
+
+    // === CORPS ===
+    DrawCube(
+        {pos.x, pos.y + 0.3f, pos.z},
+        0.6f, 0.6f, 0.6f,
+        bodyColor
+    );
+
+    // === TÊTE ===
+    Vector3 headPos = {pos.x, pos.y + 0.7f, pos.z};
+    DrawCube(
+        headPos,
+        0.4f, 0.4f, 0.4f,
+        bodyColor
+    );
+
+    // === CANON orienté vers le joueur ===
+    Vector3 barrelEnd = {
+        headPos.x + dir.x * 0.8f,
+        headPos.y,
+        headPos.z + dir.z * 0.8f
+    };
+
+    DrawCylinderEx(
+        headPos,
+        barrelEnd,
+        0.1f,
+        0.1f,
+        8,
+        gunColor
+    );
+
+    // === "ŒIL" lumineux ===
+    DrawSphere(
+        {
+            headPos.x + dir.x * 0.25f,
+            headPos.y,
+            headPos.z + dir.z * 0.25f
+        },
+        0.08f,
+        eyeColor
+    );
 }

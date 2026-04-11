@@ -265,7 +265,7 @@ public:
 
             BeginMode3D(player.cam);
                 level.Draw();
-                for (auto& t : turrets) t.Draw();
+                 for (auto& t : turrets) t.Draw(player.pos);
                 DrawAmmoPacks(); 
                 DrawHealPacks(); 
                 player.DrawLasers();

@@ -19,6 +19,8 @@ public:
     float projSpeed=6.0f;
     int hp=30;
     float hitFlash=0;
+    
+    Model model;
 
     Turret(Vector3 p);
 
@@ -26,5 +28,5 @@ public:
     void TakeDamage(int dmg);
 
     void Update(float dt,Vector3 playerPos,std::vector<Projectile>& projectiles,Level& level);
-    void Draw()const;
+    void Draw(Vector3 playerPos) const;
 };
