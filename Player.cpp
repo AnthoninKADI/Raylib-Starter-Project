@@ -91,8 +91,7 @@ void Player::Update(float dt)
     for(auto&l:lasers)l.life-=dt;
     lasers.erase(std::remove_if(lasers.begin(),lasers.end(),
         [](auto&l){return l.life<=0;}),lasers.end());
-
-    // 🔴 flash rouge diminution
+    
     if(damageFlash > 0) damageFlash -= dt;
 }
 
@@ -155,29 +154,23 @@ void Player::Reload()
 void Player::DrawGun()
 {
     rlPushMatrix();
-    
+
     rlTranslatef(cam.position.x, cam.position.y, cam.position.z);
-    
-    rlRotatef(RAD2DEG * yaw, 0, 1, 0);  
-    rlRotatef(RAD2DEG * -pitch, 1, 0, 0); 
-    
+
+    rlRotatef(RAD2DEG * yaw, 0, 1, 0);
+    rlRotatef(RAD2DEG * -pitch, 1, 0, 0);
+
     float adjustedGunOffsetY = gunOffset.y;
-    
-    if (camHeight < standHeight) {
-        adjustedGunOffsetY -= 0.15f;  
-    }
+
+    if (camHeight < standHeight)
+        adjustedGunOffsetY -= 0.15f;
 
     rlTranslatef(gunOffset.x, adjustedGunOffsetY, gunOffset.z);
 
-    rlRotatef(90.0f, 0, 1, 0);  
+    rlRotatef(-90.0f, 0, 1, 0);
+    rlRotatef(-90.0f, 0, 0, 1);
 
-    rlRotatef(-90.0f, 1, 0, 0); 
-
-    Color brightColor = WHITE;
-    brightColor.r = 255;
-    brightColor.g = 192;
-    brightColor.b = 203;
-    DrawModel(gunModel, {0,0,0}, gunScale, brightColor);
+    DrawModel(gunModel, {0,0,0}, gunScale, WHITE);
 
     rlPopMatrix();
 }

@@ -46,7 +46,7 @@ public:
 
     // Gun
     Model gunModel;
-    float gunScale = 0.1f;  
+    float gunScale = 0.3f;  
     Vector3 gunOffset = {0.0f, -0.25f, 0.6f};  
 
     int hp=100;
