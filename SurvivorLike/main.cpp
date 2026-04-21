@@ -60,6 +60,49 @@ void UpgradeHP(PlayerStats& player) { playerMaxHP += 5; }
 
 float levelUpDuration = 2.0f;
 
+struct Particle
+{
+    Vector2 pos;
+    Vector2 vel;
+    float life;
+    float maxLife;
+    float size;
+    Color color;
+};
+
+std::vector<Particle> particles;
+
+void SpawnParticles(Vector2 position)
+{
+    for(int i = 0; i < 25; i++)
+    {
+        float angle = GetRandomValue(0, 360) * DEG2RAD;
+        float speed = GetRandomValue(100, 400);
+
+        Particle p;
+        p.pos = position;
+
+        p.vel = {
+            cosf(angle) * speed,
+            sinf(angle) * speed
+        };
+
+        p.life = 0.8f;
+        p.maxLife = 0.8f;
+
+        p.size = (float)GetRandomValue(4, 10);
+
+        p.color = Color{
+            (unsigned char)GetRandomValue(200,255),
+            (unsigned char)GetRandomValue(50,100),
+            (unsigned char)GetRandomValue(50,100),
+            255
+        };
+
+        particles.push_back(p);
+    }
+}
+
 float Distance(Vector2 a, Vector2 b)
 {
     float dx = a.x - b.x;
@@ -619,6 +662,21 @@ int main()
 
         float delta = GetFrameTime();
 
+        for(int i = 0; i < particles.size(); )
+        {
+            particles[i].pos.x += particles[i].vel.x * delta;
+            particles[i].pos.y += particles[i].vel.y * delta;
+
+            particles[i].life -= delta;
+            particles[i].vel.x *= 0.96f;
+            particles[i].vel.y *= 0.96f;
+
+            if(particles[i].life <= 0)
+                particles.erase(particles.begin() + i);
+            else
+                i++;
+        }
+
         if(!gameOver)
         {
             gameTime += delta;
@@ -838,7 +896,8 @@ int main()
                     xpOrbs.push_back(orb);
 
                     totalKills++;
-
+                    
+                    SpawnParticles(enemies[j].pos);
                     enemies.erase(enemies.begin()+j);
 
                     projectiles[i].pierceCount++;
@@ -893,14 +952,16 @@ int main()
         BeginDrawing();
         ClearBackground(BLACK);
         BeginMode2D(camera);
+        
+        float size = 10000;
 
-        for(auto &tile : mapTiles)
-        {
-            DrawTexturePro(tile.texture,
-                {0,0,(float)tile.texture.width,(float)tile.texture.height},
-                {tile.pos.x,tile.pos.y,tileSize,tileSize},
-                {0,0},0,WHITE);
-        }
+        DrawRectangle(
+            playerPos.x - size/2,
+            playerPos.y - size/2,
+            size,
+            size,
+            Color{ 75, 75, 75, 255 }
+        );
 
         float pScale = playerSize/texPlayer.width;
         Color drawColor = WHITE;
@@ -960,6 +1021,22 @@ int main()
 
         if(showSpawnRadius)
             DrawCircleLines(playerPos.x,playerPos.y,enemySpawnRadius,RED);
+
+        
+        BeginBlendMode(BLEND_ADDITIVE);
+
+        for(auto &p : particles)
+        {
+            float alpha = p.life / p.maxLife;
+
+            Color c = p.color;
+            c.a = (unsigned char)(alpha * 255 * 2);
+
+            DrawCircleV(p.pos, p.size, c);
+        }
+
+        EndBlendMode();
+
 
         EndMode2D();
 
