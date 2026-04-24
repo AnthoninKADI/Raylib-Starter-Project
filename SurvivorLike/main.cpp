@@ -18,7 +18,7 @@ const int screenWidth  = 1600;
 const int screenHeight = 900;
 const float menuWidth  = 350.0f;
 
-float tileSize = 80.0f;
+float tileSize = 20.0f;
 const int mapWidth  = 200;
 const int mapHeight = 200;
 
@@ -948,21 +948,63 @@ int main()
         projectiles.erase(std::remove_if(projectiles.begin(),projectiles.end(),
                                          [](Projectile &p){ return !p.active; }),
                           projectiles.end());
+        
+        ClearBackground(BLACK);
+        
+        EndTextureMode();
 
         BeginDrawing();
         ClearBackground(BLACK);
+
         BeginMode2D(camera);
+
+        auto hash = [](float x, float y)
+        {
+            float v = sinf(x * 127.1f + y * 311.7f) * 43758.5453f;
+            return v - floorf(v);
+        };
+
+        float step = 5.0f;
+
+        int startX = (int)((camera.target.x - screenWidth) / step) - 3;
+        int endX   = (int)((camera.target.x + screenWidth) / step) + 3;
+
+        int startY = (int)((camera.target.y - screenHeight) / step) - 3;
+        int endY   = (int)((camera.target.y + screenHeight) / step) + 3;
+
+        for (int x = startX; x < endX; x++)
+        {
+            for (int y = startY; y < endY; y++)
+            {
+                float wx = x * step;
+                float wy = y * step;
+
+                // 🌿 bruit d'herbe
+                float n1 = hash(wx * 0.003f, wy * 0.003f);
+                float n2 = hash(wx * 0.02f, wy * 0.02f);
+
+                Color grassA = { 60, 170, 80, 255 };
+                Color grassB = { 45, 140, 65, 255 };
+                Color grassC = { 85, 200, 100, 255 };
+
+                Color col;
+
+                float t = n1;
+
+                col.r = (unsigned char)(grassA.r + (grassB.r - grassA.r) * t);
+                col.g = (unsigned char)(grassA.g + (grassB.g - grassA.g) * t);
+                col.b = (unsigned char)(grassA.b + (grassB.b - grassA.b) * t);
+                col.a = 255;
+                
+                if (n2 > 0.92f)
+                {
+                    col = grassC;
+                }
+
+                DrawRectangle(wx, wy, step, step, col);
+            }
+        }
         
-        float size = 10000;
-
-        DrawRectangle(
-            playerPos.x - size/2,
-            playerPos.y - size/2,
-            size,
-            size,
-            Color{ 75, 75, 75, 255 }
-        );
-
         float pScale = playerSize/texPlayer.width;
         Color drawColor = WHITE;
         if(playerInvincibilityTimer > 0)

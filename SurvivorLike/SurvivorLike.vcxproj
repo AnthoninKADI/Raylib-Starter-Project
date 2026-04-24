@@ -159,7 +159,58 @@
     <ClCompile Include="UpgradeMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\font\Nordhin-Italic.otf" />
+    <Content Include="assets\font\Nordhin-Italic.ttf" />
+    <Content Include="assets\font\Nordhin.otf" />
+    <Content Include="assets\font\Nordhin.ttf" />
+    <Content Include="assets\textures\1.png" />
+    <Content Include="assets\textures\2.png" />
+    <Content Include="assets\textures\3.png" />
+    <Content Include="assets\textures\4.png" />
+    <Content Include="assets\textures\5.png" />
+    <Content Include="assets\textures\Archer.png" />
+    <Content Include="assets\textures\AuraPlayer.png" />
+    <Content Include="assets\textures\AxePlayer.png" />
+    <Content Include="assets\textures\Book.png" />
+    <Content Include="assets\textures\BossSlime.png" />
+    <Content Include="assets\textures\Bow.png" />
+    <Content Include="assets\textures\EnemySlime.png" />
+    <Content Include="assets\textures\FireMage.png" />
+    <Content Include="assets\textures\Grass.png" />
+    <Content Include="assets\textures\LaserPlayer.png" />
+    <Content Include="assets\textures\LightningMage.png" />
+    <Content Include="assets\textures\Mage.png" />
+    <Content Include="assets\textures\PlayerSlime.png" />
+    <Content Include="assets\textures\Potion.png" />
+    <Content Include="assets\textures\Runner.png" />
+    <Content Include="assets\textures\skull.png" />
+    <Content Include="assets\textures\SniperPlayer.png" />
+    <Content Include="assets\textures\Temp\abdominal-armor.png" />
+    <Content Include="assets\textures\Temp\arrow-scope.png" />
+    <Content Include="assets\textures\Temp\aura.png" />
+    <Content Include="assets\textures\Temp\boot-kick.png" />
+    <Content Include="assets\textures\Temp\boot-stomp.png" />
+    <Content Include="assets\textures\Temp\charged-arrow.png" />
+    <Content Include="assets\textures\Temp\death-zone.png" />
+    <Content Include="assets\textures\Temp\duration.png" />
+    <Content Include="assets\textures\Temp\extra-time.png" />
+    <Content Include="assets\textures\Temp\fire-ring.png" />
+    <Content Include="assets\textures\Temp\flamer.png" />
+    <Content Include="assets\textures\Temp\health-increase.png" />
+    <Content Include="assets\textures\Temp\laser-blast.png" />
+    <Content Include="assets\textures\Temp\lightning-storm.png" />
+    <Content Include="assets\textures\Temp\recycle.png" />
+    <Content Include="assets\textures\Temp\ricochet.png" />
+    <Content Include="assets\textures\Temp\sawed-off-shotgun.png" />
+    <Content Include="assets\textures\Temp\shield-reflect.png" />
+    <Content Include="assets\textures\Temp\striking-arrows.png" />
+    <Content Include="assets\textures\Temp\william-tell.png" />
+    <Content Include="assets\textures\Temp\wingfoot.png" />
+    <Content Include="assets\textures\XP.png" />
     <Content Include="Note.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="assets\floor.fs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
