@@ -87,7 +87,7 @@ public:
             }
             if (grid[z][x] == 3) 
             {
-                DrawHealBox({p.x, 0.25f, p.z}, 0.2f, {1, 0, 0}, 30.0f, 0.4f); 
+                DrawHealBox({p.x, 0.25f, p.z}, 0.2f, {1, 0, 0}, 30.0f); 
             }
         }
     }
@@ -97,14 +97,11 @@ public:
         DrawModelEx(ammoBoxModel, position, rotationAxis, rotationAngle, {scale, scale, scale}, WHITE);
     }
 
-    void DrawHealBox(Vector3 position, float scale, Vector3 rotationAxis, float rotationAngle, float sphereSize)
+    void DrawHealBox(Vector3 position, float scale, Vector3 rotationAxis, float rotationAngle)
     {
         
         DrawModelEx(healBoxModel, position, rotationAxis, rotationAngle, {scale, scale, scale}, WHITE);
         
-       
-        Vector3 spherePosition = {position.x, position.y + 0.5f, position.z};  
-        DrawSphere(spherePosition, sphereSize, RED); 
     }
 };
 
@@ -223,7 +220,7 @@ public:
     {
         for (auto& pack : healthPacks)
             if (pack.active)
-                level.DrawHealBox(pack.pos, 0.3f, {1, 0, 0}, -90.0f, 0.05f); 
+                level.DrawHealBox(pack.pos, 0.15f, {1, 0, 0}, -90.0f); 
     }
 
     void Run()
