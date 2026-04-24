@@ -225,7 +225,7 @@ public:
 
     void Run()
     {
-        InitWindow(1280, 720, "DoomLike");
+        InitWindow(1920, 1000, "FPS Feeling");
         DisableCursor();
         SetTargetFPS(60);
 
